@@ -264,7 +264,7 @@
       byId('current-title').textContent = track ? (track.title || track.name) : 'Escolha uma música';
       byId('current-artist').textContent = track ? [track.artist, track.album].filter(Boolean).join(' · ') : 'Pronto para reproduzir';
       const playButton = byId('play-toggle');
-      playButton.textContent = audio.paused ? '▶' : 'Ⅱ';
+      playButton.innerHTML = audio.paused ? '<i class="bi bi-play-fill"></i>' : '<i class="bi bi-pause-fill"></i>';
       playButton.setAttribute('aria-label', audio.paused ? 'Reproduzir' : 'Pausar');
       byId('elapsed-time').textContent = formatDuration(audio.currentTime);
       const duration = Number.isFinite(audio.duration) ? audio.duration : (Number.isFinite(track?.duration) ? track.duration : Number.NaN);
@@ -274,9 +274,9 @@
       seek.disabled = !Number.isFinite(audio.duration) || audio.duration <= 0;
       byId('volume-control').value = String(audio.volume);
       byId('shuffle-toggle').setAttribute('aria-pressed', String(shuffle));
-      byId('shuffle-toggle').textContent = shuffle ? 'Aleatório: ligado' : 'Aleatório: desligado';
-      const loopLabels = { off: 'Repetir: desligado', track: 'Repetir: faixa', all: 'Repetir: lista' };
-      byId('loop-toggle').textContent = loopLabels[loopMode];
+      byId('shuffle-toggle').innerHTML = shuffle ? '<i class="bi bi-shuffle"></i>' : '<i class="bi bi-shuffle"></i>';
+      const loopLabels = { off: '<i class="bi bi-repeat"></i>', track: '<i class="bi bi-repeat-1"></i>', all: '<i class="bi bi-repeat"></i>' };
+      byId('loop-toggle').innerHTML = loopLabels[loopMode];
       byId('loop-toggle').setAttribute('aria-label', loopLabels[loopMode]);
       byId('loop-toggle').setAttribute('aria-pressed', String(loopMode !== 'off'));
       updateMediaSession();
@@ -295,7 +295,7 @@
         label.append(checkbox, doc.createTextNode(folder)); fragment.append(label);
       }
       folderOptions.replaceChildren(fragment);
-      const title = selectedFolders.size ? `${selectedFolders.size} pasta(s) selecionada(s)` : 'Todas as pastas';
+      const title = selectedFolders.size ? `${selectedFolders.size }pasta(s) selecionada(s)` : 'Todas as pastas';
       byId('folder-filter-summary').textContent = title;
       byId('track-search').placeholder = selectedFolders.size ? 'Buscar nas pastas selecionadas…' : 'Buscar em todas as pastas…';
     }
@@ -318,22 +318,22 @@
       const top = doc.createElement('div'); top.style.height = `${window.top}px`; fragment.append(top);
       for (const track of visibleRows.slice(window.start, window.end)) {
         const row = doc.createElement('article'); row.className = `track-row${track.id === currentId ? ' is-current' : ''}`;
-        const cover = doc.createElement('div'); cover.className = 'track-cover'; cover.textContent = '♫'; cover.setAttribute('aria-hidden', 'true');
+        const cover = doc.createElement('div'); cover.className = 'track-cover'; cover.innerHTML = '<i class="bi bi-music-note-beamed"></i>'; cover.setAttribute('aria-hidden', 'true');
         const info = doc.createElement('div'); info.className = 'track-info';
         const title = doc.createElement('strong'); title.textContent = track.title || track.name;
         const details = doc.createElement('span'); details.textContent = [track.artist, track.album, track.folder].filter(Boolean).join(' · ');
         info.append(title, details);
-        const duration = doc.createElement('span'); duration.className = 'track-duration'; duration.textContent = Number.isFinite(track.duration) ? formatDuration(track.duration) : '—';
+        const duration = doc.createElement('span'); duration.className = 'track-duration'; duration.innerHTML = Number.isFinite(track.duration) ? formatDuration(track.duration) : '<i class="bi bi-three-dots-vertical"></i>';
         const isFavorite = favorites.includes(track.id);
         const favorite = doc.createElement('button'); favorite.className = 'row-action row-favorite'; favorite.type = 'button'; favorite.dataset.favoriteId = track.id;
-        favorite.textContent = isFavorite ? '♥' : '♡'; favorite.setAttribute('aria-pressed', String(isFavorite));
+        favorite.innerHTML = isFavorite ? '<i class="bi bi-heart-fill"></i>' : '<i class="bi bi-heart"></i>'; favorite.setAttribute('aria-pressed', String(isFavorite));
         favorite.setAttribute('aria-label', `${isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}: ${track.title || track.name}`);
         const addQueue = doc.createElement('button'); addQueue.className = 'row-action'; addQueue.type = 'button'; addQueue.dataset.queueId = track.id;
-        addQueue.textContent = '+'; addQueue.setAttribute('aria-label', `Adicionar à fila: ${track.title || track.name}`);
+        addQueue.innerHTML = '<i class="bi bi-plus-lg"></i>'; addQueue.setAttribute('aria-label', `Adicionar à fila: ${track.title || track.name}`);
         const playNext = doc.createElement('button'); playNext.className = 'row-action row-play-next'; playNext.type = 'button'; playNext.dataset.playNextId = track.id;
         playNext.textContent = 'A seguir'; playNext.title = 'Tocar a seguir'; playNext.setAttribute('aria-label', `Tocar a seguir: ${track.title || track.name}`);
         const play = doc.createElement('button'); play.className = 'row-play'; play.type = 'button'; play.dataset.playId = track.id;
-        play.textContent = track.id === currentId && !audio.paused ? 'Ⅱ' : '▶'; play.setAttribute('aria-label', `${track.id === currentId && !audio.paused ? 'Pausar' : 'Tocar'} ${track.title || track.name}`);
+        play.innerHTML = track.id === currentId && !audio.paused ? '<i class="bi bi-pause-fill"></i>' : '<i class="bi bi-play-fill"></i>'; play.setAttribute('aria-label', `${track.id === currentId && !audio.paused ? 'Pausar' : 'Tocar'} ${track.title || track.name}`);
         row.append(cover, info, duration, favorite, addQueue, playNext, play); fragment.append(row);
       }
       const bottom = doc.createElement('div'); bottom.style.height = `${window.bottom}px`; fragment.append(bottom);
@@ -524,7 +524,7 @@
           saveStoredJson(storage, '64mp:history:v1', history);
           stateLoaded = true;
         }
-        status.textContent = `Biblioteca pública · ${rows.length} faixas · requer internet para reproduzir`;
+        status.textContent = `${rows.length} faixas · requer internet para reproduzir`;
         empty.querySelector('p').textContent = 'O catálogo ainda não contém músicas.';
         renderFolderOptions();
         playOrder = buildPlayOrder(scopedTracks(), shuffle);
@@ -572,7 +572,7 @@
     byId('favorites-only').addEventListener('click', (event) => {
       favoritesOnly = !favoritesOnly;
       event.currentTarget.setAttribute('aria-pressed', String(favoritesOnly));
-      event.currentTarget.textContent = favoritesOnly ? '♥ Favoritos: ligados' : '♡ Favoritos';
+      event.currentTarget.innerHTML = favoritesOnly ? '<i class="bi bi-heart-fill"></i>' : '<i class="bi bi-heart"></i>';
       list.scrollTop = 0;
       render();
     });
