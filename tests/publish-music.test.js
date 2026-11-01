@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const os = require('node:os');
+const { createHash } = require('node:crypto');
 
 async function publisher() {
   return import('../scripts/publish-music.mjs');
@@ -125,6 +126,47 @@ test('failed upload leaves the previous catalog file untouched', async () => {
     };
     await assert.rejects(publishLibrary({ root, publish: true, client }), /upload interruption/);
     assert.equal(await fs.readFile(output, 'utf8'), oldCatalog);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('successful publication verifies assets before writing catalog and skips them on rerun', async () => {
+  const { publishLibrary, makeAssetName } = await publisher();
+  const root = await fs.mkdtemp(path.join(__dirname, '.music-publish-success-'));
+  const assets = new Map();
+  let uploads = 0;
+  try {
+    await fs.mkdir(path.join(root, 'music'));
+    await fs.writeFile(path.join(root, 'music', 'nested.mp3'), Buffer.from('sample audio bytes'));
+    const client = {
+      async ensureAuth() {},
+      async ensureRelease() {},
+      async listAssets() { return [...assets.values()]; },
+      async uploadFile(file, name) {
+        const bytes = await fs.readFile(file.filePath);
+        uploads++;
+        assets.set(name, {
+          id: uploads,
+          name,
+          size: bytes.length,
+          digest: `sha256:${createHash('sha256').update(bytes).digest('hex')}`,
+          browser_download_url: `https://github.com/example/${name}`,
+        });
+      },
+      clearAuth() {},
+    };
+    const first = await publishLibrary({ root, publish: true, client });
+    assert.equal(first.catalog.tracks.length, 1);
+    assert.match(first.catalog.tracks[0].url, /^https:\/\//);
+    assert.equal(first.catalog.tracks[0].assetName, makeAssetName('nested.mp3'));
+    assert.equal(first.uploaded, 1);
+    const firstCatalog = await fs.readFile(path.join(root, 'music-catalog.json'), 'utf8');
+
+    const second = await publishLibrary({ root, publish: true, client });
+    assert.equal(second.uploaded, 0);
+    assert.equal(uploads, 1);
+    assert.equal(await fs.readFile(path.join(root, 'music-catalog.json'), 'utf8'), firstCatalog);
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }
