@@ -11,6 +11,15 @@
     return String(collection || '').trim() || 'Sem pasta';
   }
 
+  function formatBytes(bytes) {
+    if (!Number.isFinite(bytes) || bytes < 0) return '—';
+    if (bytes < 1024) return `${Math.round(bytes)} B`;
+    const units = ['KB', 'MB', 'GB', 'TB'];
+    let value = bytes / 1024; let unit = 0;
+    while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit++; }
+    return `${value.toFixed(1)} ${units[unit]}`;
+  }
+
   function boot() {
     const doc = root.document;
     if (!doc) return;
@@ -33,6 +42,7 @@
     let cancelled = false;
     let rows = [];
     let coverUrls = [];
+    let persistenceRequested = false;
 
     if (!('webkitdirectory' in doc.createElement('input'))) folderInput.parentElement.hidden = true;
     const say = (text) => { message.textContent = text || ''; };
@@ -40,6 +50,7 @@
     function render() {
       rows.sort((a, b) => (a.title || a.name).localeCompare(b.title || b.name, 'pt-BR'));
       byId('track-count').textContent = String(rows.length);
+      updateFolderOptions();
       empty.hidden = rows.length > 0;
       list.hidden = rows.length === 0;
       coverUrls.forEach((url) => URL.revokeObjectURL(url));
@@ -61,7 +72,8 @@
         const details = doc.createElement('span'); details.textContent = [track.artist, track.album, track.folder].filter(Boolean).join(' · ');
         info.append(title, details);
         const duration = doc.createElement('span'); duration.className = 'track-duration'; duration.textContent = Number.isFinite(track.duration) ? formatDuration(track.duration) : '—';
-        row.append(cover, info, duration); fragment.append(row);
+        const remove = doc.createElement('button'); remove.className = 'row-remove'; remove.type = 'button'; remove.textContent = 'Remover'; remove.setAttribute('aria-label', `Remover ${track.title || track.name}`); remove.dataset.removeId = track.id;
+        row.append(cover, info, duration, remove); fragment.append(row);
       }
       const bottom = doc.createElement('div'); bottom.style.height = `${(rows.length - end) * rowHeight}px`; fragment.append(bottom);
       list.replaceChildren(fragment);
@@ -69,12 +81,42 @@
 
     async function refresh() { try { rows = await root.MusicDB.listTracks(); render(); } catch (error) { say(`Não foi possível abrir a biblioteca: ${error.message}`); } }
 
+    async function updateStorage() {
+      const storage = root.navigator && root.navigator.storage;
+      if (!storage || typeof storage.estimate !== 'function') { byId('storage-used').textContent = 'Indisponível'; byId('storage-available').textContent = '—'; return; }
+      try {
+        const { usage = 0, quota = 0 } = await storage.estimate();
+        byId('storage-used').textContent = formatBytes(usage);
+        byId('storage-available').textContent = quota ? formatBytes(Math.max(0, quota - usage)) : 'Indisponível';
+      } catch (_) { byId('storage-used').textContent = 'Indisponível'; byId('storage-available').textContent = '—'; }
+    }
+
+    async function requestPersistence() {
+      if (persistenceRequested) return;
+      persistenceRequested = true;
+      const storage = root.navigator && root.navigator.storage;
+      if (!storage || typeof storage.persist !== 'function') { say('Este navegador não oferece armazenamento persistente; o sistema ainda pode limpar dados antigos.'); return; }
+      try { say(await storage.persist() ? 'Armazenamento persistente concedido.' : 'O navegador não concedeu armazenamento persistente.'); }
+      catch (_) { say('Não foi possível solicitar armazenamento persistente; a importação pode continuar.'); }
+    }
+
+    function updateFolderOptions() {
+      const select = byId('remove-folder-select');
+      const selected = select.value;
+      const folders = [...new Set(rows.map((track) => track.folder || 'Sem pasta'))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      select.replaceChildren(...folders.map((folder) => { const option = doc.createElement('option'); option.value = folder; option.textContent = folder; return option; }));
+      if (folders.includes(selected)) select.value = selected;
+      byId('library-actions').hidden = rows.length === 0;
+      byId('remove-folder').disabled = folders.length === 0;
+    }
+
     function formatDuration(seconds) {
       const value = Math.floor(seconds);
       return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, '0')}`;
     }
 
     async function runImport(files) {
+      await requestPersistence();
       const collection = collectionName.value;
       const valid = files.filter(isMp3);
       const total = files.length;
@@ -113,6 +155,7 @@
         if (processed % 5 === 0 || processed === total) await refresh();
       }
       await refresh();
+      await updateStorage();
       cancelButton.hidden = true;
       progressLabel.textContent = cancelled ? 'Importação pausada' : 'Lote concluído';
       status.textContent = `${added} importadas · ${skipped} duplicadas · ${failed} falhas`;
@@ -139,11 +182,30 @@
     startImport.addEventListener('click', () => runImport(pending.files));
     cancelButton.addEventListener('click', () => { cancelled = true; cancelButton.disabled = true; });
     list.addEventListener('scroll', render, { passive: true });
+    list.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-remove-id]');
+      if (!button) return;
+      try { await root.MusicDB.deleteTrack(button.dataset.removeId); await refresh(); await updateStorage(); say('Música removida.'); }
+      catch (_) { say('Não foi possível remover esta música.'); }
+    });
+    byId('remove-folder').addEventListener('click', async () => {
+      const folder = byId('remove-folder-select').value;
+      if (!folder || !root.confirm(`Remover todas as músicas de “${folder}”?`)) return;
+      try { await root.MusicDB.deleteFolder(folder); await refresh(); await updateStorage(); say(`Coleção “${folder}” removida.`); }
+      catch (_) { say('Não foi possível remover esta coleção.'); }
+    });
+    byId('clear-library').addEventListener('click', async () => {
+      if (!root.confirm('Apagar todas as músicas desta biblioteca?')) return;
+      try { await root.MusicDB.clearLibrary(); await refresh(); await updateStorage(); say('Biblioteca apagada.'); }
+      catch (_) { say('Não foi possível apagar a biblioteca.'); }
+    });
     root.addEventListener('resize', render);
+    if (root.navigator && 'serviceWorker' in root.navigator) root.navigator.serviceWorker.register('./sw.js').catch(() => say('Modo offline indisponível neste contexto. Use HTTPS ou localhost.'));
     root.addEventListener('unhandledrejection', (event) => { say(event.reason?.message || 'Ocorreu um erro inesperado.'); });
     refresh();
+    updateStorage();
   }
 
-  root.PlayerApp = { isMp3, folderFor, formatDuration: (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}` };
+  root.PlayerApp = { isMp3, folderFor, formatBytes, formatDuration: (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}` };
   if (root.document) boot();
 })(typeof window === 'undefined' ? globalThis : window);

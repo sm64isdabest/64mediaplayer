@@ -110,6 +110,7 @@ progress::-moz-progress-bar { background: var(--accent); border-radius: 99px; }
 .track-info strong { font-size: 16px; }
 .track-info span { color: var(--muted); font-size: 13px; }
 .track-duration { color: #cad8d5; font-size: 14px; font-variant-numeric: tabular-nums; }
+.row-remove { min-width: 54px; min-height: 48px; border: 1px solid #3b4b4e; border-radius: 12px; color: #c1cfcd; background: #142024; cursor: pointer; }
 .footer-note { padding: 18px 0 28px; border-top: 1px solid rgba(142, 180, 178, .12); color: #849896; font-size: 13px; text-align: center; }
 
 @media (max-width: 760px) {

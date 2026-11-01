@@ -23,3 +23,9 @@ test('keeps the relative folder path and uses the chosen collection as fallback'
   assert.equal(app.folderFor({ name: 'song.mp3', webkitRelativePath: '' }, 'Concertos'), 'Concertos');
   assert.equal(app.folderFor({ name: 'song.mp3', webkitRelativePath: '' }, ''), 'Sem pasta');
 });
+
+test('formats storage measurements using readable binary units', () => {
+  const app = loadApp();
+  assert.equal(app.formatBytes(1536), '1.5 KB');
+  assert.equal(app.formatBytes(1048576), '1.0 MB');
+});
