@@ -16,17 +16,19 @@
     const parser = root.jsmediatags;
     if (!parser || typeof parser.read !== 'function') return Promise.resolve(fallback);
     return new Promise((resolve) => {
-      parser.read(file, {
-        onSuccess: ({ tags = {} } = {}) => {
-          let cover = null;
-          const picture = tags.picture;
-          if (picture && picture.data && picture.format) {
-            try { cover = new Blob([new Uint8Array(picture.data)], { type: picture.format }); } catch (_) { cover = null; }
-          }
-          resolve({ title: textValue(tags.title) || fallback.title, artist: textValue(tags.artist), album: textValue(tags.album), cover });
-        },
-        onError: () => resolve(fallback),
-      });
+      try {
+        parser.read(file, {
+          onSuccess: ({ tags = {} } = {}) => {
+            let cover = null;
+            const picture = tags.picture;
+            if (picture && picture.data && picture.format) {
+              try { cover = new Blob([new Uint8Array(picture.data)], { type: picture.format }); } catch (_) { cover = null; }
+            }
+            resolve({ title: textValue(tags.title) || fallback.title, artist: textValue(tags.artist), album: textValue(tags.album), cover });
+          },
+          onError: () => resolve(fallback),
+        });
+      } catch (_) { resolve(fallback); }
     });
   }
 

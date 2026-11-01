@@ -19,3 +19,10 @@ test('metadata read falls back to the MP3 filename when ID3 tags cannot be read'
   assert.equal(result.album, '');
   assert.equal(result.cover, null);
 });
+
+test('metadata read also falls back if the parser throws synchronously', async () => {
+  const metadata = loadMetadata({ read: () => { throw new Error('bad file'); } });
+  const result = await metadata.readMetadata({ name: 'Outra.mp3' });
+  assert.equal(result.title, 'Outra');
+  assert.equal(result.cover, null);
+});
