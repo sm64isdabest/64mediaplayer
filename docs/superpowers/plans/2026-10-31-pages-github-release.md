@@ -43,7 +43,7 @@
 
 ---
 
-### Tarefa 1: Criar publicador local seguro e testável
+### Task 1: Criar publicador local seguro e testável
 
 **Arquivos:**
 - Criar: `.gitignore`
@@ -63,7 +63,7 @@
 - [ ] **Passo 5: Rodar `node --test tests/publish-music.test.js`**; esperado: todos os casos passam sem rede.
 - [ ] **Passo 6: Commit e push** somente `.gitignore`, `scripts/publish-music.mjs` e `tests/publish-music.test.js`.
 
-### Tarefa 2: Sincronizar assets e gerar catálogo completo
+### Task 2: Sincronizar assets e gerar catálogo completo
 
 **Arquivos:**
 - Modificar: `scripts/publish-music.mjs`
@@ -82,7 +82,7 @@
 - [ ] **Passo 6: Executar `--publish`** para publicar os 700 MP3, autorizado pelo usuário; validar contagem da Release e correspondência 1:1 com o catálogo.
 - [ ] **Passo 7: Commit e push** somente `music-catalog.json` e os testes/ajustes do publicador; nenhum MP3 entra no commit.
 
-### Tarefa 3: Trocar importação local por catálogo do Pages
+### Task 3: Trocar importação local por catálogo do Pages
 
 **Arquivos:**
 - Modificar: `app.js`
@@ -103,7 +103,7 @@
 - [ ] **Passo 6: Rodar testes de app/shell** e revisar acessibilidade e layout responsivo.
 - [ ] **Passo 7: Commit e push** somente os arquivos de interface e testes alterados.
 
-### Tarefa 4: PWA, documentação e validação dos links
+### Task 4: PWA, documentação e validação dos links
 
 **Arquivos:**
 - Modificar: `sw.js`
