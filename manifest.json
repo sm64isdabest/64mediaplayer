@@ -1,7 +1,7 @@
 {
   "name": "64 Media Player",
   "short_name": "64 Media",
-  "description": "Biblioteca pessoal de música, disponível offline.",
+  "description": "Player de música por streaming; a interface pode ser aberta offline.",
   "lang": "pt-BR",
   "start_url": "./",
   "scope": "./",

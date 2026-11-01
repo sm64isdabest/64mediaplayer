@@ -25,7 +25,7 @@
           <div>
             <p class="eyebrow">SUA MÚSICA, NO SEU RITMO</p>
             <h1 id="page-title">Sua biblioteca</h1>
-            <p class="intro">As faixas ficam em uma biblioteca pública do GitHub e são carregadas pela internet. O site mostra o catálogo; os controles de reprodução vêm na próxima etapa.</p>
+            <p class="intro">Toque sua biblioteca pública pelo Quest. As faixas são transmitidas pela internet; elas não são baixadas para o armazenamento do navegador.</p>
           </div>
         </section>
 
@@ -38,8 +38,12 @@
           <div class="library-heading">
             <div>
               <p class="eyebrow">COLEÇÃO ONLINE</p>
-              <h2 id="library-title">Todas as músicas <span id="track-count" class="count-pill">0</span></h2>
+              <h2 id="library-title"><span id="library-label">Todas as músicas</span> <span id="track-count" class="count-pill">0</span></h2>
             </div>
+            <details class="folder-filter" id="folder-filter">
+              <summary><span>Escopo</span><strong id="folder-filter-summary">Todas as pastas</strong></summary>
+              <div id="folder-filter-options" class="folder-filter-options" role="group" aria-label="Pastas incluídas na reprodução"></div>
+            </details>
           </div>
           <div id="empty-state" class="empty-state">
             <div class="empty-art" aria-hidden="true"><span>♫</span></div>
@@ -50,8 +54,32 @@
         </section>
       </main>
 
-      <footer class="footer-note">O catálogo é público. Para carregar e ouvir as faixas é necessário estar conectado à internet.</footer>
+      <footer class="footer-note">O catálogo é público. A reprodução usa streaming e precisa de internet.</footer>
     </div>
+    <section class="player-dock" aria-label="Controles do player">
+      <audio id="audio-deck" preload="metadata"></audio>
+      <div class="player-current">
+        <div class="player-art" aria-hidden="true">♫</div>
+        <div class="player-track"><strong id="current-title">Escolha uma música</strong><span id="current-artist">Pronto para reproduzir</span></div>
+        <p id="player-message" class="player-message" role="status" aria-live="polite"></p>
+      </div>
+      <div class="transport-row">
+        <button id="previous-track" class="player-button" type="button" aria-label="Faixa anterior">|◀</button>
+        <button id="play-toggle" class="player-button play-button" type="button" aria-label="Reproduzir">▶</button>
+        <button id="next-track" class="player-button" type="button" aria-label="Próxima faixa">▶|</button>
+        <button id="shuffle-toggle" class="mode-button" type="button" aria-pressed="false">Aleatório: desligado</button>
+        <button id="loop-toggle" class="mode-button" type="button" aria-label="Repetir: desligado" aria-pressed="false">Repetir: desligado</button>
+      </div>
+      <div class="timeline-row">
+        <span id="elapsed-time" class="time-readout">0:00</span>
+        <label class="visually-hidden" for="seek-control">Posição da música</label>
+        <input id="seek-control" class="range-control seek-control" type="range" min="0" max="1000" value="0" step="1" disabled>
+        <span id="duration-time" class="time-readout">—</span>
+        <label class="visually-hidden" for="volume-control">Volume</label>
+        <span class="volume-icon" aria-hidden="true">◖))</span>
+        <input id="volume-control" class="range-control volume-control" type="range" min="0" max="1" value="1" step="0.01">
+      </div>
+    </section>
     <script defer src="./app.js"></script>
   </body>
 </html>

@@ -44,13 +44,13 @@
 - `seekTarget(value, duration) -> number|null` limita seek a segundos válidos ou retorna `null` sem duração.
 - `loadCatalog(url)` segue validando a fonte atual de faixas.
 
-- [ ] **Passo 1: Escrever testes RED** para Fisher–Yates sem repetição, faixa atual no início do novo ciclo, anterior/próxima e loop de faixa automático vs. manual, escopo por pastas e seek com valores inválidos.
-- [ ] **Passo 2: Rodar os testes focalizados** e confirmar as falhas esperadas.
-- [ ] **Passo 3: Implementar o modelo de navegação** em `app.js`, mantendo a reprodução vinculada à lista filtrada.
-- [ ] **Passo 4: Integrar `<audio>` e Media Session** com tratamento de autoplay/rede/compatibilidade; não solicitar CORS.
-- [ ] **Passo 5: Criar barra inferior e seletor multi-pasta** com alvos grandes, estados acessíveis e uso responsivo no Quest.
-- [ ] **Passo 6: Rodar `node --test tests/*.test.js`, `node --check app.js` e `git diff --check`; verificar virtualização e que o service worker não armazena áudio**.
-- [ ] **Passo 7: Commit e push** somente interface, app e testes desta tarefa.
+- [x] **Passo 1: Escrever testes RED** para Fisher–Yates sem repetição, faixa atual no início do novo ciclo, anterior/próxima e loop de faixa automático vs. manual, escopo por pastas e seek com valores inválidos.
+- [x] **Passo 2: Rodar os testes focalizados** e confirmar as falhas esperadas.
+- [x] **Passo 3: Implementar o modelo de navegação** em `app.js`, mantendo a reprodução vinculada à lista filtrada.
+- [x] **Passo 4: Integrar `<audio>` e Media Session** com tratamento de autoplay/rede/compatibilidade; não solicitar CORS.
+- [x] **Passo 5: Criar barra inferior e seletor multi-pasta** com alvos grandes, estados acessíveis e uso responsivo no Quest.
+- [x] **Passo 6: Rodar `node --test tests/*.test.js`, `node --check app.js` e `git diff --check`; verificar virtualização e que o service worker não armazena áudio**.
+- [x] **Passo 7: Commit e push** somente interface, app e testes desta tarefa.
 
 ## Parada desta etapa
 

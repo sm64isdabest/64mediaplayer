@@ -5,6 +5,7 @@ const path = require('node:path');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const serviceWorker = fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8');
+const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'manifest.json'), 'utf8'));
 
 test('shell describes a public online library and includes loading, retry, and track list states', () => {
   for (const id of ['catalog-status', 'catalog-retry', 'track-count', 'track-list', 'empty-state']) {
@@ -18,6 +19,19 @@ test('shell describes a public online library and includes loading, retry, and t
 test('shell no longer loads local database or exposes MP3 import controls', () => {
   assert.doesNotMatch(html, /id=["'](?:file-input|folder-input|start-import|choose-quest-folder|clear-library)["']/);
   assert.doesNotMatch(html, /<script[^>]+(?:db\.js|metadata\.js|jsmediatags)/);
+});
+
+test('player exposes native streaming transport, seek, volume, loop, shuffle, and folder scope', () => {
+  for (const id of ['audio-deck', 'play-toggle', 'previous-track', 'next-track', 'seek-control', 'volume-control', 'loop-toggle', 'shuffle-toggle', 'folder-filter-options']) {
+    assert.match(html, new RegExp(`id=["']${id}["']`), `missing #${id}`);
+  }
+  assert.match(html, /<audio id="audio-deck" preload="metadata"><\/audio>/);
+  assert.doesNotMatch(html, /crossorigin/i);
+});
+
+test('PWA manifest says the audio streams and updates use a new shell cache version', () => {
+  assert.match(manifest.description, /streaming/i);
+  assert.match(serviceWorker, /64-media-player-shell-v3/);
 });
 
 test('offline shell includes the public catalog and never caches MP3 assets', () => {
