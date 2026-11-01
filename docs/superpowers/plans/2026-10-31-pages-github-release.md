@@ -76,7 +76,7 @@
 
 - [ ] **Passo 1: Escrever testes RED** para publicação retomável, upload alterado, paginação/lista completa de assets e garantia de que catálogo não é escrito após falha.
 - [ ] **Passo 2: Rodar os testes** e confirmar a falha esperada.
-- [ ] **Passo 3: Implementar a sincronização** com criação de Release/tag, uploads em lotes dentro dos limites de linha de comando do Windows, substituição determinística e retomada após falhas.
+- [ ] **Passo 3: Implementar a sincronização** com criação de Release/tag e upload HTTP em streaming direto de cada MP3, autenticado pelo `gh` local; manter o token apenas em memória, substituir assets alterados e retomar falhas sem copiar os 2,4 GiB para staging.
 - [ ] **Passo 4: Validar a Release inteira** contra os caminhos locais e só então escrever `music-catalog.json` em substituição atômica; o catálogo contém metadados e URLs públicas, nunca blobs ou imagens de capa embutidas.
 - [ ] **Passo 5: Testar `--dry-run` com a pasta local completa** e revisar somente a contagem, tamanho total, maior arquivo, colisões e erros; não listar nomes/títulos.
 - [ ] **Passo 6: Executar `--publish`** para publicar os 673 MP3 encontrados no preflight local, autorizado pelo usuário; validar contagem da Release e correspondência 1:1 com o catálogo.
