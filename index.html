@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b1114">
+    <meta name="description" content="Sua biblioteca de música, salva neste navegador e disponível offline.">
+    <title>64 Media Player</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" href="./assets/app-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="64 Media Player, início">
+          <span class="brand-mark" aria-hidden="true">64</span>
+          <span class="brand-name">MEDIA<span>PLAYER</span></span>
+        </a>
+        <div class="local-badge"><span class="status-dot" aria-hidden="true"></span>Biblioteca local</div>
+      </header>
+
+      <main>
+        <section class="welcome" aria-labelledby="page-title">
+          <div>
+            <p class="eyebrow">SUA MÚSICA, NO SEU RITMO</p>
+            <h1 id="page-title">Sua biblioteca</h1>
+            <p class="intro">Importe seus MP3. Eles ficam salvos neste navegador, sem enviar arquivos para um servidor.</p>
+          </div>
+          <div class="import-actions" aria-label="Importar arquivos MP3">
+            <label class="button button-primary" for="file-input">
+              <span class="button-icon" aria-hidden="true">＋</span>Importar músicas
+            </label>
+            <input id="file-input" class="visually-hidden" type="file" accept=".mp3,audio/mpeg" multiple>
+            <label class="button button-secondary" for="folder-input">
+              <span class="button-icon" aria-hidden="true">▣</span>Importar pasta
+            </label>
+            <input id="folder-input" class="visually-hidden" type="file" accept=".mp3,audio/mpeg" multiple webkitdirectory directory>
+          </div>
+        </section>
+
+        <section class="import-panel panel" aria-labelledby="import-title">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">PRIMEIRO PASSO</p>
+              <h2 id="import-title">Adicione suas músicas</h2>
+            </div>
+            <span class="step-chip">MP3 · arquivos locais</span>
+          </div>
+          <p class="panel-copy">Escolha vários arquivos de uma vez ou uma pasta inteira. Para centenas de faixas, importe em lotes: você pode cancelar e continuar depois.</p>
+          <div class="collection-field" id="collection-field" hidden>
+            <label for="collection-name">Nome desta coleção</label>
+            <input id="collection-name" type="text" maxlength="80" placeholder="Ex.: Eletrônica">
+          </div>
+          <div class="progress-wrap" id="progress-wrap" hidden>
+            <div class="progress-labels">
+              <span id="progress-label">Preparando importação</span>
+              <span id="progress-count">0/0</span>
+            </div>
+            <progress id="import-progress" value="0" max="100" aria-label="Progresso da importação">0%</progress>
+            <div class="progress-footer">
+              <span id="import-status" role="status" aria-live="polite">Aguardando arquivos</span>
+              <button id="import-cancel" class="text-button" type="button" hidden>Cancelar</button>
+            </div>
+          </div>
+          <div id="import-message" class="inline-message" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="storage-panel panel" aria-labelledby="storage-title">
+          <div class="storage-icon" aria-hidden="true">▤</div>
+          <div class="storage-copy">
+            <h2 id="storage-title">Armazenamento neste navegador</h2>
+            <p>As músicas permanecem no dispositivo em que você as importou.</p>
+          </div>
+          <div class="storage-stats" aria-live="polite">
+            <div><span>Usado</span><strong id="storage-used">Calculando…</strong></div>
+            <div><span>Disponível</span><strong id="storage-available">—</strong></div>
+          </div>
+        </section>
+
+        <section class="library-section" aria-labelledby="library-title">
+          <div class="library-heading">
+            <div>
+              <p class="eyebrow">COLEÇÃO</p>
+              <h2 id="library-title">Todas as músicas <span id="track-count" class="count-pill">0</span></h2>
+            </div>
+            <div class="library-actions" id="library-actions" hidden>
+              <button class="button button-danger" id="clear-library" type="button">Apagar biblioteca</button>
+            </div>
+          </div>
+          <div id="empty-state" class="empty-state">
+            <div class="empty-art" aria-hidden="true"><span>♫</span></div>
+            <h3>Ainda não há músicas</h3>
+            <p>Importe seus arquivos MP3 para montar sua biblioteca pessoal.</p>
+          </div>
+          <div id="track-list" class="track-list" aria-label="Lista de músicas" hidden></div>
+        </section>
+      </main>
+
+      <footer class="footer-note">Seus arquivos de áudio não são enviados para a internet.</footer>
+    </div>
+  </body>
+</html>

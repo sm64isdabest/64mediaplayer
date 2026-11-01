@@ -1,0 +1,19 @@
+{
+  "name": "64 Media Player",
+  "short_name": "64 Media",
+  "description": "Biblioteca pessoal de música, disponível offline.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1114",
+  "theme_color": "#0b1114",
+  "icons": [
+    {
+      "src": "./assets/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
