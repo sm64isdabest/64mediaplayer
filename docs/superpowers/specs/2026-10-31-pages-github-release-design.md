@@ -2,7 +2,7 @@
 
 ## Intenção
 
-Publicar o player em GitHub Pages e tocar a biblioteca de aproximadamente 700 MP3 diretamente de assets públicos de um GitHub Release. Isso evita copiar cerca de 2,4 GiB para IndexedDB e mantém o uso da biblioteca fora do limite de 1 GiB do site publicado pelo Pages.
+Publicar o player em GitHub Pages e tocar a biblioteca de aproximadamente 673 MP3 diretamente de assets públicos de um GitHub Release. Isso evita copiar cerca de 2,4 GiB para IndexedDB e mantém o uso da biblioteca fora do limite de 1 GiB do site publicado pelo Pages.
 
 ## Objetivos
 
@@ -23,7 +23,7 @@ Publicar o player em GitHub Pages e tocar a biblioteca de aproximadamente 700 MP
 
 ## Abordagens
 
-1. **GitHub Pages + GitHub Release (escolhida):** o Pages serve o player e um catálogo pequeno; um Release público no mesmo repositório mantém os MP3 como anexos binários, separados do histórico Git e do pacote Pages. A biblioteca local tem 700 arquivos, abaixo do limite documentado de 1.000 assets por Release; o maior MP3 observado tem aproximadamente 18 MB, abaixo do limite individual de 2 GiB. Trade-off: os áudios são públicos, precisam de internet e o GitHub pode limitar tráfego considerado excessivo.
+1. **GitHub Pages + GitHub Release (escolhida):** o Pages serve o player e um catálogo pequeno; um Release público no mesmo repositório mantém os MP3 como anexos binários, separados do histórico Git e do pacote Pages. A biblioteca local tem 673 MP3, abaixo do limite documentado de 1.000 assets por Release; o maior MP3 observado tem aproximadamente 17 MiB, abaixo do limite individual de 2 GiB. Trade-off: os áudios são públicos, precisam de internet e o GitHub pode limitar tráfego considerado excessivo.
 2. **GitHub Pages + Cloudflare R2:** mantém o mesmo catálogo/streaming, com franquia gratuita de armazenamento e saída sem tarifa; exige outra conta e configuração do endpoint público, e o endereço `r2.dev` é limitado para desenvolvimento.
 3. **Servidor no celular ou computador:** não exige armazenamento na nuvem, mas o dispositivo precisa permanecer ligado e acessível na rede. O uso de conteúdo HTTP pela página HTTPS e a disponibilidade na rede do Quest adicionam configuração.
 
