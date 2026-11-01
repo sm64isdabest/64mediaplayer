@@ -166,3 +166,35 @@ test('queue inserts next, reorders and removes without mutating and ignores inva
   assert.deepEqual([...app.removeQueueItem(queue, 9)], queue);
   assert.deepEqual(queue, ['a', 'b', 'a']);
 });
+
+test('stored JSON helpers fall back safely when storage or JSON is unavailable', () => {
+  const app = loadApp();
+  const fallback = ['safe'];
+  assert.deepEqual([...app.loadStoredJson(null, 'key', fallback)], ['safe']);
+  assert.deepEqual([...app.loadStoredJson({ getItem: () => '{bad json' }, 'key', fallback)], ['safe']);
+  assert.deepEqual([...app.loadStoredJson({ getItem: () => { throw new Error('blocked'); } }, 'key', fallback)], ['safe']);
+  assert.equal(app.saveStoredJson(null, 'key', ['value']), false);
+  let stored = null;
+  assert.equal(app.saveStoredJson({ setItem(key, value) { stored = [key, value]; } }, 'key', ['value']), true);
+  assert.deepEqual(stored, ['key', '["value"]']);
+  assert.equal(app.saveStoredJson({ setItem() { throw new Error('blocked'); } }, 'key', []), false);
+});
+
+test('catalog reconciliation drops orphaned favorites and history entries', () => {
+  const app = loadApp();
+  const reconciled = app.reconcileCatalogState(
+    ['a', 'missing', 'a'],
+    [{ trackId: 'missing', playedAt: 1 }, { trackId: 'b', playedAt: 2 }, { trackId: 'b', playedAt: 3 }],
+    [{ id: 'a' }, { id: 'b' }],
+  );
+  assert.deepEqual(toPlain(reconciled), {
+    favorites: ['a'],
+    history: [{ trackId: 'b', playedAt: 2 }, { trackId: 'b', playedAt: 3 }],
+  });
+});
+
+test('queue consumption returns its first track and preserves repeated upcoming entries', () => {
+  const app = loadApp();
+  assert.deepEqual(toPlain(app.consumeQueue(['a', 'a', 'b'])), { trackId: 'a', queue: ['a', 'b'] });
+  assert.deepEqual(toPlain(app.consumeQueue([])), { trackId: null, queue: [] });
+});

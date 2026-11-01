@@ -121,6 +121,33 @@
     return result;
   }
 
+  function loadStoredJson(storage, key, fallback) {
+    try {
+      const value = storage?.getItem(key);
+      return value ? JSON.parse(value) : fallback;
+    } catch (_) { return fallback; }
+  }
+
+  function saveStoredJson(storage, key, value) {
+    try {
+      if (!storage || typeof storage.setItem !== 'function') return false;
+      storage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (_) { return false; }
+  }
+
+  function reconcileCatalogState(favorites, history, tracks) {
+    const available = new Set((tracks || []).map((track) => track.id));
+    const validFavorites = [...new Set((Array.isArray(favorites) ? favorites : []).filter((id) => typeof id === 'string' && available.has(id)))];
+    const validHistory = (Array.isArray(history) ? history : []).filter((entry) => entry && typeof entry.trackId === 'string' && available.has(entry.trackId) && (typeof entry.playedAt === 'number' || typeof entry.playedAt === 'string')).slice(0, 100);
+    return { favorites: validFavorites, history: validHistory };
+  }
+
+  function consumeQueue(queue) {
+    const [trackId = null, ...remaining] = queue || [];
+    return { trackId, queue: remaining };
+  }
+
   function configureMediaSession(session, metadata, handlers, MetadataConstructor = root.MediaMetadata) {
     if (!session) return false;
     if (MetadataConstructor) {
@@ -166,6 +193,14 @@
     let loopMode = 'off';
     let lastMetadataTrackId = Symbol('unset');
     let seeking = false;
+    let favorites = [];
+    let history = [];
+    let queue = [];
+    let playbackSession = 0;
+    let lastRecordedSession = -1;
+    let stateLoaded = false;
+    let storage = null;
+    try { storage = root.localStorage || null; } catch (_) { storage = null; }
 
     function currentTrack() { return rows.find((track) => track.id === currentId) || null; }
     function scopedTracks() { return filterByFolders(rows, selectedFolders); }
@@ -271,6 +306,7 @@
     function setCurrent(track, autoplay = true) {
       if (!track) return;
       currentId = track.id;
+      playbackSession++;
       if (shuffle) playOrder = buildPlayOrder(visibleRows, true, Math.random, currentId);
       else playOrder = buildPlayOrder(visibleRows, false, Math.random, currentId);
       audio.src = track.url;
@@ -299,6 +335,20 @@
     }
 
     function moveTrack(direction, automatic = false) {
+      if (direction === 'next' && queue.length) {
+        const next = consumeQueue(queue);
+        queue = next.queue;
+        const queuedTrack = rows.find((track) => track.id === next.trackId);
+        if (queuedTrack) {
+          currentId = queuedTrack.id;
+          playbackSession++;
+          audio.src = queuedTrack.url;
+          audio.load();
+          updatePlayer();
+          togglePlayback(true);
+          return;
+        }
+      }
       if (direction === 'next' && loopMode === 'all' && currentId && playOrder.indexOf(currentId) === playOrder.length - 1) {
         playOrder = buildNextCycle(visibleRows, currentId, shuffle);
       }
@@ -311,11 +361,12 @@
       if (!nextTrack) return;
       if (nextId === currentId) {
         audio.currentTime = 0;
-        if (automatic) togglePlayback(true);
+        if (automatic) { playbackSession++; togglePlayback(true); }
         else updatePlayer();
         return;
       }
       currentId = nextId;
+      playbackSession++;
       audio.src = nextTrack.url;
       audio.load();
       updatePlayer();
@@ -359,6 +410,18 @@
       status.textContent = 'Carregando biblioteca pública…';
       try {
         rows = await loadCatalog('./music-catalog.json');
+        if (!stateLoaded) {
+          const saved = reconcileCatalogState(
+            loadStoredJson(storage, '64mp:favorites:v1', []),
+            loadStoredJson(storage, '64mp:history:v1', []),
+            rows,
+          );
+          favorites = saved.favorites;
+          history = saved.history;
+          saveStoredJson(storage, '64mp:favorites:v1', favorites);
+          saveStoredJson(storage, '64mp:history:v1', history);
+          stateLoaded = true;
+        }
         status.textContent = `Biblioteca pública · ${rows.length} faixas · requer internet para reproduzir`;
         empty.querySelector('p').textContent = 'O catálogo ainda não contém músicas.';
         renderFolderOptions();
@@ -410,7 +473,15 @@
     audio.addEventListener('timeupdate', updatePlayer);
     audio.addEventListener('durationchange', updatePlayer);
     audio.addEventListener('loadedmetadata', updatePlayer);
-    audio.addEventListener('play', () => { updateStatus('Reproduzindo'); updatePlayer(); });
+    audio.addEventListener('play', () => {
+      updateStatus('Reproduzindo');
+      if (currentId && playbackSession !== lastRecordedSession) {
+        history = recordPlay(history, currentId, Date.now());
+        lastRecordedSession = playbackSession;
+        saveStoredJson(storage, '64mp:history:v1', history);
+      }
+      updatePlayer();
+    });
     audio.addEventListener('pause', updatePlayer);
     audio.addEventListener('ended', () => moveTrack('next', true));
     audio.addEventListener('error', () => updateStatus('Erro ao carregar a faixa. Verifique a conexão e tente outra música.'));
@@ -418,6 +489,6 @@
     refresh();
   }
 
-  root.PlayerApp = { loadCatalog, validateCatalog, virtualWindow, formatDuration, fisherYates, buildPlayOrder, buildNextCycle, adjacentTrackId, filterByFolders, nextFolderSelection, seekTarget, normalizeSearchText, searchTracks, toggleFavorite, recordPlay, insertQueueNext, moveQueueItem, removeQueueItem, configureMediaSession };
+  root.PlayerApp = { loadCatalog, validateCatalog, virtualWindow, formatDuration, fisherYates, buildPlayOrder, buildNextCycle, adjacentTrackId, filterByFolders, nextFolderSelection, seekTarget, normalizeSearchText, searchTracks, toggleFavorite, recordPlay, insertQueueNext, moveQueueItem, removeQueueItem, loadStoredJson, saveStoredJson, reconcileCatalogState, consumeQueue, configureMediaSession };
   if (root.document) boot();
 })(typeof window === 'undefined' ? globalThis : window);
