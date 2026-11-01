@@ -158,10 +158,9 @@ test('play history preserves repeated plays newest first and caps at 100 entries
   assert.equal(capped.some((entry) => entry.trackId === '99'), false);
 });
 
-test('queue inserts next, reorders and removes without mutating and ignores invalid indexes', () => {
+test('queue reorders and removes without mutating and ignores invalid indexes', () => {
   const app = loadApp();
   const queue = ['a', 'b', 'a'];
-  assert.deepEqual([...app.insertQueueNext(queue, 'c')], ['c', 'a', 'b', 'a']);
   assert.deepEqual([...app.moveQueueItem(queue, 2, 0)], ['a', 'a', 'b']);
   assert.deepEqual([...app.moveQueueItem(queue, -1, 1)], queue);
   assert.deepEqual([...app.moveQueueItem(queue, 0, 3)], queue);

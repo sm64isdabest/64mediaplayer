@@ -102,10 +102,6 @@
     return [entry, ...(history || [])].slice(0, maximum);
   }
 
-  function insertQueueNext(queue, trackId) {
-    return [trackId, ...(queue || [])];
-  }
-
   function moveQueueItem(queue, fromIndex, toIndex) {
     const result = [...(queue || [])];
     if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex) || fromIndex < 0 || toIndex < 0 || fromIndex >= result.length || toIndex >= result.length) return result;
@@ -330,11 +326,9 @@
         favorite.setAttribute('aria-label', `${isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}: ${track.title || track.name}`);
         const addQueue = doc.createElement('button'); addQueue.className = 'row-action'; addQueue.type = 'button'; addQueue.dataset.queueId = track.id;
         addQueue.innerHTML = '<i class="bi bi-plus-lg"></i>'; addQueue.setAttribute('aria-label', `Adicionar à fila: ${track.title || track.name}`);
-        const playNext = doc.createElement('button'); playNext.className = 'row-action row-play-next'; playNext.type = 'button'; playNext.dataset.playNextId = track.id;
-        playNext.textContent = 'A seguir'; playNext.title = 'Tocar a seguir'; playNext.setAttribute('aria-label', `Tocar a seguir: ${track.title || track.name}`);
         const play = doc.createElement('button'); play.className = 'row-play'; play.type = 'button'; play.dataset.playId = track.id;
         play.innerHTML = track.id === currentId && !audio.paused ? '<i class="bi bi-pause-fill"></i>' : '<i class="bi bi-play-fill"></i>'; play.setAttribute('aria-label', `${track.id === currentId && !audio.paused ? 'Pausar' : 'Tocar'} ${track.title || track.name}`);
-        row.append(cover, info, duration, favorite, addQueue, playNext, play); fragment.append(row);
+        row.append(cover, info, duration, favorite, addQueue, play); fragment.append(row);
       }
       const bottom = doc.createElement('div'); bottom.style.height = `${window.bottom}px`; fragment.append(bottom);
       list.replaceChildren(fragment);
@@ -604,10 +598,9 @@
         render();
         return;
       }
-      const queueButton = event.target.closest('[data-queue-id], [data-play-next-id]');
+      const queueButton = event.target.closest('[data-queue-id]');
       if (queueButton) {
-        const trackId = queueButton.dataset.queueId || queueButton.dataset.playNextId;
-        queue = queueButton.hasAttribute('data-play-next-id') ? insertQueueNext(queue, trackId) : [...queue, trackId];
+        queue = [...queue, queueButton.dataset.queueId];
         renderQueue();
         return;
       }
@@ -640,6 +633,6 @@
     refresh();
   }
 
-  root.PlayerApp = { loadCatalog, validateCatalog, virtualWindow, formatDuration, fisherYates, buildPlayOrder, buildNextCycle, adjacentTrackId, filterByFolders, nextFolderSelection, seekTarget, normalizeSearchText, searchTracks, toggleFavorite, recordPlay, insertQueueNext, moveQueueItem, removeQueueItem, loadStoredJson, saveStoredJson, reconcileCatalogState, consumeQueue, nextQueuedTarget, recordStartedSession, beginPlaybackSession, configureMediaSession };
+  root.PlayerApp = { loadCatalog, validateCatalog, virtualWindow, formatDuration, fisherYates, buildPlayOrder, buildNextCycle, adjacentTrackId, filterByFolders, nextFolderSelection, seekTarget, normalizeSearchText, searchTracks, toggleFavorite, recordPlay, moveQueueItem, removeQueueItem, loadStoredJson, saveStoredJson, reconcileCatalogState, consumeQueue, nextQueuedTarget, recordStartedSession, beginPlaybackSession, configureMediaSession };
   if (root.document) boot();
 })(typeof window === 'undefined' ? globalThis : window);

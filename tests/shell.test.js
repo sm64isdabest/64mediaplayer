@@ -49,9 +49,7 @@ test('stage four shell exposes search, favorites, queue, history, and accessible
   const combined = `${html}\n${appSource}`;
   assert.match(combined, /data-favorite-id/);
   assert.match(combined, /data-queue-id/);
-  assert.match(combined, /data-play-next-id/);
   assert.match(combined, /aria-label=["'][^"']*(?:mover|remover|fila|favorito|hist.rico)/i);
-  assert.match(appSource, /playNext\.textContent = 'A seguir'/);
   assert.match(appSource, /Buscar nas pastas selecionadas/);
   assert.match(appSource, /Buscar em todas as pastas/);
   assert.match(appSource, /audio\.addEventListener\('playing'/);
