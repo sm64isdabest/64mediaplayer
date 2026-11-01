@@ -2,7 +2,7 @@
   'use strict';
 
   const DB_NAME = '64-media-player';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   let openPromise;
 
   function makeDuplicateKey(name, size) {
@@ -21,6 +21,7 @@
         if (!tracks.indexNames.contains('folder')) tracks.createIndex('folder', 'folder', { unique: false });
         if (!tracks.indexNames.contains('duplicateKey')) tracks.createIndex('duplicateKey', 'duplicateKey', { unique: true });
         if (!db.objectStoreNames.contains('audio')) db.createObjectStore('audio', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('fileHandles')) db.createObjectStore('fileHandles', { keyPath: 'id' });
       };
       request.onsuccess = () => {
         const db = request.result;
@@ -43,7 +44,8 @@
   async function listTracks() {
     const db = await openDB();
     const tx = db.transaction('tracks', 'readonly');
-    return requestResult(tx.objectStore('tracks').getAll());
+    const rows = await requestResult(tx.objectStore('tracks').getAll());
+    return rows.map((track) => ({ source: 'blob', folderId: null, relativePath: null, ...track }));
   }
 
   async function findDuplicate(name, size) {
@@ -56,10 +58,40 @@
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(['tracks', 'audio'], 'readwrite');
-      tx.objectStore('tracks').put({ ...track, duplicateKey: track.duplicateKey || makeDuplicateKey(track.name, track.size) });
+      tx.objectStore('tracks').put({ source: 'blob', folderId: null, relativePath: null, ...track, duplicateKey: track.duplicateKey || makeDuplicateKey(track.name, track.size) });
       tx.objectStore('audio').put({ id: track.id, blob });
       tx.oncomplete = () => resolve();
       tx.onabort = tx.onerror = () => reject(tx.error || new Error('Não foi possível salvar esta música.'));
+    });
+  }
+
+  async function saveFolderHandle(folderId, name, handle) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('fileHandles', 'readwrite');
+      tx.objectStore('fileHandles').put({ id: folderId, name, handle, updatedAt: Date.now() });
+      tx.oncomplete = resolve;
+      tx.onabort = tx.onerror = () => reject(tx.error || new Error('Não foi possível guardar o acesso à pasta.'));
+    });
+  }
+
+  async function getFolderHandle(folderId) {
+    const db = await openDB();
+    const row = await requestResult(db.transaction('fileHandles', 'readonly').objectStore('fileHandles').get(folderId));
+    return row || null;
+  }
+
+  async function saveDirectTrack(track, folderId) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('tracks', 'readwrite');
+      tx.objectStore('tracks').put({
+        ...track, source: 'handle', folderId,
+        relativePath: track.relativePath || track.path || track.name,
+        duplicateKey: track.duplicateKey || makeDuplicateKey(track.name, track.size)
+      });
+      tx.oncomplete = resolve;
+      tx.onabort = tx.onerror = () => reject(tx.error || new Error('Não foi possível salvar os dados desta música.'));
     });
   }
 
@@ -110,5 +142,5 @@
     });
   }
 
-  root.MusicDB = { openDB, listTracks, findDuplicate, makeDuplicateKey, saveTrack, getAudio, deleteTrack, deleteFolder, clearLibrary };
+  root.MusicDB = { openDB, listTracks, findDuplicate, makeDuplicateKey, saveTrack, saveDirectTrack, saveFolderHandle, getFolderHandle, getAudio, deleteTrack, deleteFolder, clearLibrary };
 })(typeof window === 'undefined' ? globalThis : window);
