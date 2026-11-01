@@ -1,6 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const fs = require('node:fs/promises');
+const os = require('node:os');
 
 async function publisher() {
   return import('../scripts/publish-music.mjs');
@@ -65,4 +67,65 @@ test('catalog validation catches normalized duplicate paths', async () => {
   ];
   const result = validateLibrary(files, []);
   assert.ok(result.errors.some((error) => error.code === 'duplicate-path'));
+});
+
+test('library validation catches assets that do not match local MP3 digests', async () => {
+  const { validateLibrary, makeAssetName } = await publisher();
+  const file = { relativePath: 'track.mp3', name: 'track.mp3', size: 10, digest: 'sha256:local' };
+  const result = validateLibrary([file], [{ name: makeAssetName(file.relativePath), size: 10, digest: 'sha256:remote', browser_download_url: 'https://asset/track' }]);
+  assert.ok(result.errors.some((error) => error.code === 'asset-integrity'));
+});
+
+test('library validation catches stale release assets and rejects an empty library', async () => {
+  const { validateLibrary, makeAssetName } = await publisher();
+  const file = { relativePath: 'track.mp3', name: 'track.mp3', size: 10 };
+  const result = validateLibrary([file], [
+    { name: makeAssetName(file.relativePath), size: 10, browser_download_url: 'https://asset/track' },
+    { name: 'stale.mp3', size: 4, browser_download_url: 'https://asset/stale' },
+  ]);
+  assert.ok(result.errors.some((error) => error.code === 'unexpected-asset'));
+  assert.ok(validateLibrary([], []).errors.some((error) => error.code === 'empty-library'));
+});
+
+test('upload plan skips matching digests and replaces only changed assets', async () => {
+  const { buildUploadPlan, makeAssetName } = await publisher();
+  const files = [
+    { relativePath: 'same.mp3', name: 'same.mp3', size: 10, digest: 'sha256:one' },
+    { relativePath: 'changed.mp3', name: 'changed.mp3', size: 20, digest: 'sha256:new' },
+    { relativePath: 'new.mp3', name: 'new.mp3', size: 30, digest: 'sha256:three' },
+  ];
+  const existing = [
+    { name: makeAssetName('same.mp3'), digest: 'sha256:one', size: 10, browser_download_url: 'https://asset/same' },
+    { name: makeAssetName('changed.mp3'), digest: 'sha256:old', size: 20, browser_download_url: 'https://asset/old' },
+  ];
+  const plan = buildUploadPlan(files, existing);
+  assert.deepEqual(plan.map((item) => item.action), ['skip', 'replace', 'upload']);
+});
+
+test('asset pages returned by the API are flattened without dropping later pages', async () => {
+  const { flattenAssetPages } = await publisher();
+  const pages = [[{ name: 'a' }, { name: 'b' }], [{ name: 'c' }]];
+  assert.deepEqual(flattenAssetPages(pages).map((asset) => asset.name), ['a', 'b', 'c']);
+});
+
+test('failed upload leaves the previous catalog file untouched', async () => {
+  const { publishLibrary } = await publisher();
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'music-publish-test-'));
+  try {
+    await fs.mkdir(path.join(root, 'music'));
+    await fs.writeFile(path.join(root, 'music', 'test.mp3'), Buffer.from('not an MP3 but the metadata fallback accepts it'));
+    const output = path.join(root, 'music-catalog.json');
+    const oldCatalog = '{"version":1,"tracks":[]}';
+    await fs.writeFile(output, oldCatalog);
+    const client = {
+      async ensureAuth() {},
+      async ensureRelease() {},
+      async listAssets() { return []; },
+      async uploadFile() { throw new Error('simulated upload interruption'); },
+    };
+    await assert.rejects(publishLibrary({ root, publish: true, client }), /upload interruption/);
+    assert.equal(await fs.readFile(output, 'utf8'), oldCatalog);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
 });
