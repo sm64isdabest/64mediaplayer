@@ -20,6 +20,20 @@
     return `${value.toFixed(1)} ${units[unit]}`;
   }
 
+  function createBatchControl() {
+    let cancelled = false;
+    return { cancel: () => { cancelled = true; }, isCancelled: () => cancelled };
+  }
+
+  function virtualWindow(count, scrollTop, viewportHeight, rowHeight = 88, overscan = 6) {
+    const maxScroll = Math.max(0, count * rowHeight - viewportHeight);
+    const clampedScroll = Math.min(Math.max(0, scrollTop), maxScroll);
+    const first = Math.floor(clampedScroll / rowHeight);
+    const start = Math.max(0, first - overscan);
+    const end = Math.min(count, first + Math.ceil(viewportHeight / rowHeight) + overscan);
+    return { start, end, top: start * rowHeight, bottom: (count - end) * rowHeight, clampedScroll };
+  }
+
   function boot() {
     const doc = root.document;
     if (!doc) return;
@@ -39,12 +53,12 @@
     const list = byId('track-list');
     const empty = byId('empty-state');
     const pending = { files: [], fromFolder: false };
-    let cancelled = false;
+    let activeBatch = null;
     let rows = [];
     let coverUrls = [];
     let persistenceRequested = false;
 
-    if (!('webkitdirectory' in doc.createElement('input'))) folderInput.parentElement.hidden = true;
+    if (!('webkitdirectory' in doc.createElement('input'))) byId('folder-picker').hidden = true;
     const say = (text) => { message.textContent = text || ''; };
 
     function render() {
@@ -57,11 +71,11 @@
       coverUrls = [];
       if (!rows.length) { list.replaceChildren(); return; }
       const rowHeight = 88;
-      const start = Math.max(0, Math.floor(list.scrollTop / rowHeight) - 6);
-      const visible = Math.ceil((list.clientHeight || 520) / rowHeight) + 12;
-      const end = Math.min(rows.length, start + visible);
+      const window = virtualWindow(rows.length, list.scrollTop, list.clientHeight || 520, rowHeight, 6);
+      if (window.clampedScroll !== list.scrollTop) list.scrollTop = window.clampedScroll;
+      const { start, end } = window;
       const fragment = doc.createDocumentFragment();
-      const top = doc.createElement('div'); top.style.height = `${start * rowHeight}px`; fragment.append(top);
+      const top = doc.createElement('div'); top.style.height = `${window.top}px`; fragment.append(top);
       for (const track of rows.slice(start, end)) {
         const row = doc.createElement('article'); row.className = 'track-row';
         const cover = doc.createElement('div'); cover.className = 'track-cover';
@@ -75,7 +89,7 @@
         const remove = doc.createElement('button'); remove.className = 'row-remove'; remove.type = 'button'; remove.textContent = 'Remover'; remove.setAttribute('aria-label', `Remover ${track.title || track.name}`); remove.dataset.removeId = track.id;
         row.append(cover, info, duration, remove); fragment.append(row);
       }
-      const bottom = doc.createElement('div'); bottom.style.height = `${(rows.length - end) * rowHeight}px`; fragment.append(bottom);
+      const bottom = doc.createElement('div'); bottom.style.height = `${window.bottom}px`; fragment.append(bottom);
       list.replaceChildren(fragment);
     }
 
@@ -83,7 +97,7 @@
 
     async function updateStorage() {
       const storage = root.navigator && root.navigator.storage;
-      if (!storage || typeof storage.estimate !== 'function') { byId('storage-used').textContent = 'Indisponível'; byId('storage-available').textContent = '—'; return; }
+      if (!storage || typeof storage.estimate !== 'function') { byId('storage-used').textContent = 'Indisponível'; byId('storage-available').textContent = '—'; byId('storage-persistence').textContent = 'Armazenamento persistente indisponível'; return; }
       try {
         const { usage = 0, quota = 0 } = await storage.estimate();
         byId('storage-used').textContent = formatBytes(usage);
@@ -95,9 +109,9 @@
       if (persistenceRequested) return;
       persistenceRequested = true;
       const storage = root.navigator && root.navigator.storage;
-      if (!storage || typeof storage.persist !== 'function') { say('Este navegador não oferece armazenamento persistente; o sistema ainda pode limpar dados antigos.'); return; }
-      try { say(await storage.persist() ? 'Armazenamento persistente concedido.' : 'O navegador não concedeu armazenamento persistente.'); }
-      catch (_) { say('Não foi possível solicitar armazenamento persistente; a importação pode continuar.'); }
+      if (!storage || typeof storage.persist !== 'function') { byId('storage-persistence').textContent = 'Persistência indisponível; o navegador ainda pode limpar dados antigos'; return; }
+      try { byId('storage-persistence').textContent = await storage.persist() ? 'Armazenamento persistente concedido' : 'Persistência recusada pelo navegador'; }
+      catch (_) { byId('storage-persistence').textContent = 'Não foi possível solicitar persistência'; }
     }
 
     function updateFolderOptions() {
@@ -116,23 +130,25 @@
     }
 
     async function runImport(files) {
+      if (activeBatch) { say('Já há uma importação em andamento. Aguarde ou cancele o lote atual.'); return; }
+      const valid = files.filter(isMp3);
+      if (!valid.length) { say('Selecione arquivos MP3 para importar.'); return; }
+      const batch = createBatchControl();
+      activeBatch = batch;
       await requestPersistence();
       const collection = collectionName.value;
-      const valid = files.filter(isMp3);
       const total = files.length;
-      if (!valid.length) { say('Selecione arquivos MP3 para importar.'); return; }
       collectionField.hidden = true;
       progressWrap.hidden = false;
       cancelButton.hidden = false;
       cancelButton.disabled = false;
-      cancelled = false;
       let added = 0; let skipped = 0; let failed = total - valid.length; let processed = failed;
       progressBar.value = 0;
       progressLabel.textContent = 'Importando sua biblioteca';
       progressCount.textContent = `0/${total}`;
       say(failed ? `${failed} arquivo(s) ignorado(s): formato diferente de MP3.` : 'Preparando arquivos…');
       for (const file of valid) {
-        if (cancelled) break;
+        if (batch.isCancelled()) break;
         try {
           if (await root.MusicDB.findDuplicate(file.name, file.size)) skipped++;
           else {
@@ -151,15 +167,16 @@
         processed++;
         progressBar.value = Math.round(processed * 100 / total);
         progressCount.textContent = `${processed}/${total}`;
-        status.textContent = cancelled ? 'Cancelando após a faixa atual…' : `${added} importadas · ${skipped} duplicadas · ${failed} falhas`;
+        status.textContent = batch.isCancelled() ? 'Cancelando após a faixa atual…' : `${added} importadas · ${skipped} duplicadas · ${failed} falhas`;
         if (processed % 5 === 0 || processed === total) await refresh();
       }
       await refresh();
       await updateStorage();
       cancelButton.hidden = true;
-      progressLabel.textContent = cancelled ? 'Importação pausada' : 'Lote concluído';
+      progressLabel.textContent = batch.isCancelled() ? 'Importação pausada' : 'Lote concluído';
       status.textContent = `${added} importadas · ${skipped} duplicadas · ${failed} falhas`;
-      say(cancelled ? 'Lote pausado. Selecione os mesmos arquivos para continuar; os já salvos serão ignorados.' : 'Importação concluída. Seus arquivos permanecem neste navegador.');
+      say(batch.isCancelled() ? 'Lote pausado. Selecione os mesmos arquivos para continuar; os já salvos serão ignorados.' : 'Importação concluída. Seus arquivos permanecem neste navegador.');
+      if (activeBatch === batch) activeBatch = null;
     }
 
     function selected(input, fromFolder) {
@@ -180,7 +197,7 @@
     filesInput.addEventListener('change', () => selected(filesInput, false));
     folderInput.addEventListener('change', () => selected(folderInput, true));
     startImport.addEventListener('click', () => runImport(pending.files));
-    cancelButton.addEventListener('click', () => { cancelled = true; cancelButton.disabled = true; });
+    cancelButton.addEventListener('click', () => { activeBatch?.cancel(); cancelButton.disabled = true; });
     list.addEventListener('scroll', render, { passive: true });
     list.addEventListener('click', async (event) => {
       const button = event.target.closest('[data-remove-id]');
@@ -206,6 +223,6 @@
     updateStorage();
   }
 
-  root.PlayerApp = { isMp3, folderFor, formatBytes, formatDuration: (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}` };
+  root.PlayerApp = { isMp3, folderFor, formatBytes, createBatchControl, virtualWindow, formatDuration: (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}` };
   if (root.document) boot();
 })(typeof window === 'undefined' ? globalThis : window);

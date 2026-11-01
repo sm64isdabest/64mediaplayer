@@ -35,10 +35,12 @@
               <span class="button-icon" aria-hidden="true">＋</span>Importar músicas
             </label>
             <input id="file-input" class="visually-hidden" type="file" accept=".mp3,audio/mpeg" multiple>
-            <label class="button button-secondary" for="folder-input">
-              <span class="button-icon" aria-hidden="true">▣</span>Importar pasta
-            </label>
-            <input id="folder-input" class="visually-hidden" type="file" accept=".mp3,audio/mpeg" multiple webkitdirectory directory>
+            <div class="folder-picker" id="folder-picker">
+              <label class="button button-secondary" for="folder-input">
+                <span class="button-icon" aria-hidden="true">▣</span>Importar pasta
+              </label>
+              <input id="folder-input" class="visually-hidden" type="file" accept=".mp3,audio/mpeg" multiple webkitdirectory directory>
+            </div>
           </div>
         </section>
 
@@ -79,6 +81,7 @@
           <div class="storage-stats" aria-live="polite">
             <div><span>Usado</span><strong id="storage-used">Calculando…</strong></div>
             <div><span>Disponível</span><strong id="storage-available">—</strong></div>
+            <p id="storage-persistence" class="persistence-status">Persistência não solicitada</p>
           </div>
         </section>
 
