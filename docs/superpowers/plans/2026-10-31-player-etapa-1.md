@@ -44,7 +44,7 @@
 
 ---
 
-### Tarefa 1: Montar a estrutura visual e o manifesto
+### Task 1: Montar a estrutura visual e o manifesto
 
 **Arquivos:**
 - Criar: `index.html`
@@ -61,7 +61,7 @@
 - [ ] **Passo 4: Criar `assets/app-icon.svg`** como ícone vetorial local e referenciá-lo no manifesto com tamanho `any` e MIME `image/svg+xml`.
 - [ ] **Passo 5: Conferir a tela vazia** servindo o diretório com `py -m http.server 8000`; abrir `http://localhost:8000` no Chrome e verificar a 400 px de largura e em paisagem. Esperado: nenhum controle cortado e seletores identificáveis sem depender de hover.
 
-### Tarefa 2: Criar a camada de metadados e armazenamento
+### Task 2: Criar a camada de metadados e armazenamento
 
 **Arquivos:**
 - Criar: `db.js`
@@ -83,7 +83,7 @@
 - [ ] **Passo 5: Carregar os scripts locais com `defer` em `index.html`** nesta ordem: parser, `db.js`, `metadata.js`; deixar `app.js` para a tarefa 3.
 - [ ] **Passo 6: Conferir manualmente no Chrome** chamando `MediaMetadata.readMetadata()` e `MusicDB.saveTrack()` com arquivos escolhidos no DevTools. Esperado: MP3 com e sem tags têm resultado; reabrir o IndexedDB mostra um item no store de metadados e um blob correspondente no store `audio`.
 
-### Tarefa 3: Implementar importação, progresso, retomada e lista
+### Task 3: Implementar importação, progresso, retomada e lista
 
 **Arquivos:**
 - Criar: `app.js`
@@ -102,7 +102,7 @@
 - [ ] **Passo 5: Implementar a lista virtualizada**: ordenar por título para apresentação nesta etapa, criar somente linhas visíveis e overscan, exibir capa ou placeholder, título, artista, álbum, duração e pasta.
 - [ ] **Passo 6: Conferir importação manual com 20 MP3** no Chrome. Incluir um arquivo `.mp3` com `File.type` vazio e uma faixa sem tags; esperado: ambos importam, a faixa sem tags aparece pelo nome, cancelar preserva concluídas, repetir o lote pula duplicatas e rolar a lista não cria centenas de nós simultâneos. Quando disponível, conferir o caminho da pasta; no Quest sem seletor de pasta, conferir o campo de coleção manual.
 
-### Tarefa 4: Adicionar medidor, gestão, cache offline e instruções
+### Task 4: Adicionar medidor, gestão, cache offline e instruções
 
 **Arquivos:**
 - Criar: `sw.js`
