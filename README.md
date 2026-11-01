@@ -34,9 +34,13 @@ No GitHub, abra **Settings → Pages**, escolha **Deploy from a branch**, seleci
 
 O nome das faixas, tags ID3, pastas e links dos MP3 aparecem no catálogo público. Não inclua informação privada nos nomes ou metadados. Para carregar a lista pela primeira vez é necessário internet. O service worker pode manter a interface e o catálogo em cache para consulta offline depois de uma visita conectada; os MP3 não entram no cache e exigem internet.
 
-Na verificação de um asset publicado, o servidor respondeu `206 Partial Content` com `Accept-Ranges: bytes`, mas usou `application/octet-stream` e não enviou cabeçalho CORS. A reprodução direta e a Media Session ainda precisam ser confirmadas no Quest. Web Audio (EQ e crossfade) requer CORS e não está confirmado para esses links.
+Na verificação de um asset publicado, o servidor respondeu `206 Partial Content` com `Accept-Ranges: bytes`, mas usou `application/octet-stream` e não enviou cabeçalho CORS. A reprodução direta em segundo plano foi confirmada no Quest. Web Audio (EQ e crossfade) requer CORS e permanece adiado para esses links.
 
-Os controles atuais usam o áudio nativo do navegador: play/pause, próxima/anterior, seek, volume, repetição, shuffle por ciclo e escopo por pasta. O suporte da Media Session e a reprodução em segundo plano devem ser confirmados no Quest. Crossfade e EQ continuam pendentes de uma entrega de áudio com CORS.
+Os controles usam o áudio nativo do navegador: play/pause, próxima/anterior, seek, volume, repetição, shuffle por ciclo, escopo por pasta, busca por título/artista/álbum/pasta, favoritos, histórico e fila editável.
+
+Favoritos e as últimas 100 reproduções ficam em `localStorage` somente neste navegador e são associados aos IDs do catálogo; nenhum MP3 é guardado ali. O histórico pode ser limpo pela interface. A fila permite itens repetidos, é mantida apenas durante a sessão e toca antes da ordem normal. Busca e filtro de favoritos limitam a lista mostrada; a reprodução automática continua seguindo o escopo de pastas selecionado.
+
+Crossfade e EQ continuam adiados: o endpoint atual não fornece CORS para o Web Audio. Para recuperar a interface offline após as mudanças, o service worker instala o cache `64-media-player-shell-v4`; os MP3 continuam fora do cache e exigem internet.
 
 Para executar a interface localmente, use um servidor HTTP (o service worker não funciona ao abrir o arquivo diretamente):
 

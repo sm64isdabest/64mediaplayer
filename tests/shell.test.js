@@ -32,7 +32,7 @@ test('player exposes native streaming transport, seek, volume, loop, shuffle, an
 
 test('PWA manifest says the audio streams and updates use a new shell cache version', () => {
   assert.match(manifest.description, /streaming/i);
-  assert.match(serviceWorker, /64-media-player-shell-v3/);
+  assert.match(serviceWorker, /64-media-player-shell-v4/);
 });
 
 test('offline shell includes the public catalog and never caches MP3 assets', () => {
