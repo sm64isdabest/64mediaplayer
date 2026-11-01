@@ -45,6 +45,28 @@
               <div id="folder-filter-options" class="folder-filter-options" role="group" aria-label="Pastas incluídas na reprodução"></div>
             </details>
           </div>
+          <div class="library-tools" aria-label="Ferramentas da biblioteca">
+            <label class="search-field">
+              <span aria-hidden="true">⌕</span>
+              <span class="visually-hidden">Buscar por título, artista, álbum ou pasta</span>
+              <input id="track-search" type="search" placeholder="Buscar música, artista, álbum ou pasta" autocomplete="off">
+            </label>
+            <button id="favorites-only" class="mode-button" type="button" aria-pressed="false">♡ Favoritos</button>
+            <details id="queue-panel" class="library-drawer">
+              <summary>Fila <span id="queue-count" class="count-pill">0</span></summary>
+              <div class="drawer-content">
+                <p id="queue-empty" class="drawer-empty">A fila está vazia.</p>
+                <ol id="queue-list" class="drawer-list" aria-label="A seguir"></ol>
+              </div>
+            </details>
+            <details id="history-panel" class="library-drawer">
+              <summary>Histórico <span id="history-count" class="count-pill">0</span></summary>
+              <div class="drawer-content">
+                <div class="drawer-heading"><p id="history-empty" class="drawer-empty">As faixas reproduzidas aparecerão aqui.</p><button id="clear-history" class="text-button" type="button" aria-label="Limpar histórico">Limpar</button></div>
+                <ol id="history-list" class="drawer-list" aria-label="Últimas faixas reproduzidas"></ol>
+              </div>
+            </details>
+          </div>
           <div id="empty-state" class="empty-state">
             <div class="empty-art" aria-hidden="true"><span>♫</span></div>
             <h3>A biblioteca está vazia</h3>

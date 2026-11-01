@@ -191,6 +191,8 @@
     let currentId = null;
     let shuffle = false;
     let loopMode = 'off';
+    let searchQuery = '';
+    let favoritesOnly = false;
     let lastMetadataTrackId = Symbol('unset');
     let seeking = false;
     let favorites = [];
@@ -204,6 +206,7 @@
 
     function currentTrack() { return rows.find((track) => track.id === currentId) || null; }
     function scopedTracks() { return filterByFolders(rows, selectedFolders); }
+    function visibleTracks() { return searchTracks(scopedTracks(), searchQuery, favoritesOnly, favorites); }
 
     function updateStatus(message) {
       byId('player-message').textContent = message || '';
@@ -277,12 +280,17 @@
     }
 
     function render() {
-      visibleRows = scopedTracks().sort((a, b) => (a.title || a.name).localeCompare(b.title || b.name, 'pt-BR'));
+      visibleRows = visibleTracks().sort((a, b) => (a.title || a.name).localeCompare(b.title || b.name, 'pt-BR'));
       byId('track-count').textContent = String(visibleRows.length);
       byId('library-label').textContent = selectedFolders.size ? 'Músicas filtradas' : 'Todas as músicas';
       empty.hidden = visibleRows.length > 0;
       list.hidden = visibleRows.length === 0;
-      if (!visibleRows.length) { list.replaceChildren(); return; }
+      if (!visibleRows.length) {
+        empty.querySelector('h3').textContent = rows.length ? 'Nenhuma música encontrada' : 'A biblioteca está vazia';
+        empty.querySelector('p').textContent = rows.length ? 'Tente outro termo ou ajuste os filtros.' : 'O catálogo ainda não contém músicas.';
+        list.replaceChildren();
+        return;
+      }
       const window = virtualWindow(visibleRows.length, list.scrollTop, list.clientHeight || 520, 88, 6);
       if (window.clampedScroll !== list.scrollTop) list.scrollTop = window.clampedScroll;
       const fragment = doc.createDocumentFragment();
@@ -295,20 +303,76 @@
         const details = doc.createElement('span'); details.textContent = [track.artist, track.album, track.folder].filter(Boolean).join(' · ');
         info.append(title, details);
         const duration = doc.createElement('span'); duration.className = 'track-duration'; duration.textContent = Number.isFinite(track.duration) ? formatDuration(track.duration) : '—';
+        const isFavorite = favorites.includes(track.id);
+        const favorite = doc.createElement('button'); favorite.className = 'row-action row-favorite'; favorite.type = 'button'; favorite.dataset.favoriteId = track.id;
+        favorite.textContent = isFavorite ? '♥' : '♡'; favorite.setAttribute('aria-pressed', String(isFavorite));
+        favorite.setAttribute('aria-label', `${isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}: ${track.title || track.name}`);
+        const addQueue = doc.createElement('button'); addQueue.className = 'row-action'; addQueue.type = 'button'; addQueue.dataset.queueId = track.id;
+        addQueue.textContent = '+'; addQueue.setAttribute('aria-label', `Adicionar à fila: ${track.title || track.name}`);
+        const playNext = doc.createElement('button'); playNext.className = 'row-action'; playNext.type = 'button'; playNext.dataset.playNextId = track.id;
+        playNext.textContent = '↥'; playNext.setAttribute('aria-label', `Tocar a seguir: ${track.title || track.name}`);
         const play = doc.createElement('button'); play.className = 'row-play'; play.type = 'button'; play.dataset.playId = track.id;
         play.textContent = track.id === currentId && !audio.paused ? 'Ⅱ' : '▶'; play.setAttribute('aria-label', `${track.id === currentId && !audio.paused ? 'Pausar' : 'Tocar'} ${track.title || track.name}`);
-        row.append(cover, info, duration, play); fragment.append(row);
+        row.append(cover, info, duration, favorite, addQueue, playNext, play); fragment.append(row);
       }
       const bottom = doc.createElement('div'); bottom.style.height = `${window.bottom}px`; fragment.append(bottom);
       list.replaceChildren(fragment);
+    }
+
+    function renderQueue() {
+      const queueList = byId('queue-list');
+      const fragment = doc.createDocumentFragment();
+      queue.forEach((trackId, index) => {
+        const track = rows.find((item) => item.id === trackId);
+        if (!track) return;
+        const item = doc.createElement('li'); item.className = 'drawer-row';
+        const title = doc.createElement('span'); title.className = 'drawer-track-title'; title.textContent = track.title || track.name;
+        const artist = doc.createElement('span'); artist.className = 'drawer-track-meta'; artist.textContent = track.artist || track.folder || '';
+        const info = doc.createElement('span'); info.className = 'drawer-track-info'; info.append(title, artist);
+        const actions = doc.createElement('span'); actions.className = 'drawer-actions';
+        for (const [action, label, symbol, disabled] of [
+          ['up', 'Mover para cima', '↑', index === 0],
+          ['down', 'Mover para baixo', '↓', index === queue.length - 1],
+          ['remove', 'Remover da fila', '×', false],
+        ]) {
+          const button = doc.createElement('button'); button.className = 'row-action'; button.type = 'button'; button.dataset.queueAction = action; button.dataset.queueIndex = String(index);
+          button.textContent = symbol; button.disabled = disabled; button.setAttribute('aria-label', `${label}: ${track.title || track.name}`); actions.append(button);
+        }
+        item.append(info, actions); fragment.append(item);
+      });
+      queueList.replaceChildren(fragment);
+      byId('queue-count').textContent = String(queue.length);
+      byId('queue-empty').hidden = queue.length > 0;
+    }
+
+    function renderHistory() {
+      const historyList = byId('history-list');
+      const fragment = doc.createDocumentFragment();
+      history.forEach((entry, index) => {
+        const track = rows.find((item) => item.id === entry.trackId);
+        if (!track) return;
+        const item = doc.createElement('li'); item.className = 'drawer-row';
+        const title = doc.createElement('span'); title.className = 'drawer-track-title'; title.textContent = track.title || track.name;
+        const played = doc.createElement('span'); played.className = 'drawer-track-meta';
+        const time = new Date(entry.playedAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+        played.textContent = [track.artist, time].filter(Boolean).join(' · ');
+        const info = doc.createElement('span'); info.className = 'drawer-track-info'; info.append(title, played);
+        const play = doc.createElement('button'); play.className = 'row-action'; play.type = 'button'; play.dataset.historyId = track.id; play.dataset.historyIndex = String(index);
+        play.textContent = '▶'; play.setAttribute('aria-label', `Reproduzir do histórico: ${track.title || track.name}`);
+        item.append(info, play); fragment.append(item);
+      });
+      historyList.replaceChildren(fragment);
+      byId('history-count').textContent = String(history.length);
+      byId('history-empty').hidden = history.length > 0;
+      byId('clear-history').hidden = history.length === 0;
     }
 
     function setCurrent(track, autoplay = true) {
       if (!track) return;
       currentId = track.id;
       playbackSession++;
-      if (shuffle) playOrder = buildPlayOrder(visibleRows, true, Math.random, currentId);
-      else playOrder = buildPlayOrder(visibleRows, false, Math.random, currentId);
+      if (shuffle) playOrder = buildPlayOrder(scopedTracks(), true, Math.random, currentId);
+      else playOrder = buildPlayOrder(scopedTracks(), false, Math.random, currentId);
       audio.src = track.url;
       audio.load();
       updatePlayer();
@@ -320,7 +384,7 @@
         if (forcePlay === false || (forcePlay === null && !audio.paused)) { audio.pause(); updateStatus('Pausado'); }
         else {
           if (!currentTrack()) {
-            const first = playOrder[0] || visibleRows[0]?.id;
+            const first = visibleRows[0]?.id || playOrder[0];
             const track = visibleRows.find((item) => item.id === first);
             if (!track) { updateStatus('Nenhuma faixa disponível neste escopo.'); return; }
             setCurrent(track, false);
@@ -339,6 +403,7 @@
         const next = consumeQueue(queue);
         queue = next.queue;
         const queuedTrack = rows.find((track) => track.id === next.trackId);
+        renderQueue();
         if (queuedTrack) {
           currentId = queuedTrack.id;
           playbackSession++;
@@ -350,14 +415,14 @@
         }
       }
       if (direction === 'next' && loopMode === 'all' && currentId && playOrder.indexOf(currentId) === playOrder.length - 1) {
-        playOrder = buildNextCycle(visibleRows, currentId, shuffle);
+        playOrder = buildNextCycle(scopedTracks(), currentId, shuffle);
       }
       const nextId = adjacentTrackId(playOrder, currentId, direction, loopMode, automatic);
       if (!nextId) {
         if (direction === 'next') { audio.pause(); updateStatus('Fim da lista.'); updatePlayer(); }
         return;
       }
-      const nextTrack = visibleRows.find((track) => track.id === nextId);
+      const nextTrack = scopedTracks().find((track) => track.id === nextId);
       if (!nextTrack) return;
       if (nextId === currentId) {
         audio.currentTime = 0;
@@ -388,11 +453,11 @@
     function applyScope() {
       renderFolderOptions();
       const oldTrack = currentTrack();
-      visibleRows = scopedTracks();
-      if (oldTrack && !visibleRows.some((track) => track.id === currentId)) {
+      visibleRows = visibleTracks();
+      if (oldTrack && !scopedTracks().some((track) => track.id === currentId)) {
         audio.pause(); audio.removeAttribute('src'); audio.load(); currentId = null;
       }
-      playOrder = buildPlayOrder(visibleRows, shuffle, Math.random, currentId);
+      playOrder = buildPlayOrder(scopedTracks(), shuffle, Math.random, currentId);
       list.scrollTop = 0;
       updatePlayer();
       updateStatus(selectedFolders.size ? 'Escopo de reprodução atualizado.' : 'Escopo em todas as pastas.');
@@ -427,6 +492,8 @@
         renderFolderOptions();
         playOrder = buildPlayOrder(scopedTracks(), shuffle);
         render();
+        renderQueue();
+        renderHistory();
       } catch (error) {
         rows = []; render();
         status.textContent = root.navigator?.onLine === false ? 'Você está offline. Conecte-se para carregar a biblioteca pública.' : (error.message || 'Não foi possível carregar o catálogo.');
@@ -444,7 +511,7 @@
     byId('next-track').addEventListener('click', () => moveTrack('next'));
     byId('shuffle-toggle').addEventListener('click', () => {
       shuffle = !shuffle;
-      playOrder = buildPlayOrder(visibleRows, shuffle, Math.random, currentId);
+      playOrder = buildPlayOrder(scopedTracks(), shuffle, Math.random, currentId);
       updatePlayer(); updateStatus(shuffle ? 'Aleatório ativado.' : 'Aleatório desativado.');
     });
     byId('loop-toggle').addEventListener('click', () => {
@@ -460,7 +527,54 @@
     byId('seek-control').addEventListener('blur', () => { seeking = false; });
     byId('volume-control').addEventListener('input', (event) => { audio.volume = Math.max(0, Math.min(1, Number(event.target.value))); updatePlayer(); });
     folderOptions.addEventListener('change', onFolderChange);
+    byId('track-search').addEventListener('input', (event) => {
+      searchQuery = event.target.value;
+      list.scrollTop = 0;
+      render();
+    });
+    byId('favorites-only').addEventListener('click', (event) => {
+      favoritesOnly = !favoritesOnly;
+      event.currentTarget.setAttribute('aria-pressed', String(favoritesOnly));
+      event.currentTarget.textContent = favoritesOnly ? '♥ Favoritos: ligados' : '♡ Favoritos';
+      list.scrollTop = 0;
+      render();
+    });
+    byId('clear-history').addEventListener('click', () => {
+      history = [];
+      saveStoredJson(storage, '64mp:history:v1', history);
+      renderHistory();
+    });
+    byId('queue-list').addEventListener('click', (event) => {
+      const button = event.target.closest('[data-queue-action]');
+      if (!button) return;
+      const index = Number(button.dataset.queueIndex);
+      if (button.dataset.queueAction === 'up') queue = moveQueueItem(queue, index, index - 1);
+      else if (button.dataset.queueAction === 'down') queue = moveQueueItem(queue, index, index + 1);
+      else if (button.dataset.queueAction === 'remove') queue = removeQueueItem(queue, index);
+      renderQueue();
+    });
+    byId('history-list').addEventListener('click', (event) => {
+      const button = event.target.closest('[data-history-id]');
+      if (!button) return;
+      const track = rows.find((item) => item.id === button.dataset.historyId);
+      if (track) setCurrent(track, true);
+    });
     list.addEventListener('click', (event) => {
+      const favoriteButton = event.target.closest('[data-favorite-id]');
+      if (favoriteButton) {
+        favorites = toggleFavorite(favorites, favoriteButton.dataset.favoriteId);
+        saveStoredJson(storage, '64mp:favorites:v1', favorites);
+        render();
+        return;
+      }
+      const queueButton = event.target.closest('[data-queue-id], [data-play-next-id]');
+      if (queueButton) {
+        const trackId = queueButton.dataset.queueId || queueButton.dataset.playNextId;
+        queue = queueButton.hasAttribute('data-play-next-id') ? insertQueueNext(queue, trackId) : [...queue, trackId];
+        renderQueue();
+        updateStatus(queueButton.hasAttribute('data-play-next-id') ? 'Faixa adicionada para tocar a seguir.' : 'Faixa adicionada ao fim da fila.');
+        return;
+      }
       const button = event.target.closest('[data-play-id]');
       if (!button) return;
       const track = visibleRows.find((item) => item.id === button.dataset.playId);
@@ -479,6 +593,7 @@
         history = recordPlay(history, currentId, Date.now());
         lastRecordedSession = playbackSession;
         saveStoredJson(storage, '64mp:history:v1', history);
+        renderHistory();
       }
       updatePlayer();
     });
