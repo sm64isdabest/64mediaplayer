@@ -76,6 +76,51 @@
     return Math.max(0, Math.min(numericValue, duration));
   }
 
+  function normalizeSearchText(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+  }
+
+  function searchTracks(tracks, query, favoritesOnly = false, favorites = []) {
+    const needle = normalizeSearchText(query).trim();
+    const favoriteIds = new Set(favorites || []);
+    return (tracks || []).filter((track) => {
+      if (favoritesOnly && !favoriteIds.has(track.id)) return false;
+      if (!needle) return true;
+      const searchable = [track.title, track.name, track.artist, track.album, track.folder].map(normalizeSearchText).join(' ');
+      return searchable.includes(needle);
+    });
+  }
+
+  function toggleFavorite(favorites, trackId) {
+    const unique = [...new Set(favorites || [])];
+    return unique.includes(trackId) ? unique.filter((id) => id !== trackId) : [...unique, trackId];
+  }
+
+  function recordPlay(history, trackId, playedAt = Date.now(), limit = 100) {
+    const entry = { trackId, playedAt };
+    const maximum = Number.isFinite(limit) ? Math.max(0, Math.floor(limit)) : 100;
+    return [entry, ...(history || [])].slice(0, maximum);
+  }
+
+  function insertQueueNext(queue, trackId) {
+    return [trackId, ...(queue || [])];
+  }
+
+  function moveQueueItem(queue, fromIndex, toIndex) {
+    const result = [...(queue || [])];
+    if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex) || fromIndex < 0 || toIndex < 0 || fromIndex >= result.length || toIndex >= result.length) return result;
+    const [item] = result.splice(fromIndex, 1);
+    result.splice(toIndex, 0, item);
+    return result;
+  }
+
+  function removeQueueItem(queue, index) {
+    const result = [...(queue || [])];
+    if (!Number.isInteger(index) || index < 0 || index >= result.length) return result;
+    result.splice(index, 1);
+    return result;
+  }
+
   function configureMediaSession(session, metadata, handlers, MetadataConstructor = root.MediaMetadata) {
     if (!session) return false;
     if (MetadataConstructor) {
@@ -373,6 +418,6 @@
     refresh();
   }
 
-  root.PlayerApp = { loadCatalog, validateCatalog, virtualWindow, formatDuration, fisherYates, buildPlayOrder, buildNextCycle, adjacentTrackId, filterByFolders, nextFolderSelection, seekTarget, configureMediaSession };
+  root.PlayerApp = { loadCatalog, validateCatalog, virtualWindow, formatDuration, fisherYates, buildPlayOrder, buildNextCycle, adjacentTrackId, filterByFolders, nextFolderSelection, seekTarget, normalizeSearchText, searchTracks, toggleFavorite, recordPlay, insertQueueNext, moveQueueItem, removeQueueItem, configureMediaSession };
   if (root.document) boot();
 })(typeof window === 'undefined' ? globalThis : window);

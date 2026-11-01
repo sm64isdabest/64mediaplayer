@@ -10,6 +10,10 @@ function loadApp() {
   return window.PlayerApp;
 }
 
+function toPlain(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
 test('loads a valid catalog with public HTTPS asset URLs', async () => {
   const app = loadApp();
   const track = { id: 'track-1', assetName: 'track-a.mp3', name: 'a.mp3', title: 'Live', artist: 'Band', album: '', folder: 'Rock', size: 42, duration: null, mimeType: 'audio/mpeg', url: 'https://github.com/example/asset.mp3' };
@@ -119,4 +123,46 @@ test('Media Session is optional and unsupported actions do not block supported h
   assert.equal(session.metadata.title, 'Track');
   assert.equal(actions.has('play'), true);
   assert.equal(actions.has('nexttrack'), false);
+});
+
+test('search matches normalized metadata and combines query with favorite filtering', () => {
+  const app = loadApp();
+  const catalog = [
+    { id: 'a', title: 'Coração Valente', artist: 'Björk', album: 'Ao Vivo', folder: 'Música Brasileira' },
+    { id: 'b', title: 'Valente', artist: 'Outro', album: '', folder: 'Rock' },
+    { id: 'c', title: 'Noite', artist: 'Björk', album: '', folder: 'Rock' },
+  ];
+  assert.deepEqual([...app.searchTracks(catalog, 'coracao', false, [])].map((track) => track.id), ['a']);
+  assert.deepEqual([...app.searchTracks(catalog, 'bjork', true, ['c'])].map((track) => track.id), ['c']);
+  assert.deepEqual([...app.searchTracks(catalog, 'rock', false, [])].map((track) => track.id), ['b', 'c']);
+});
+
+test('favorite toggle adds and removes IDs without duplicates', () => {
+  const app = loadApp();
+  assert.deepEqual([...app.toggleFavorite(['a'], 'b')], ['a', 'b']);
+  assert.deepEqual([...app.toggleFavorite(['a', 'a', 'b'], 'a')], ['b']);
+});
+
+test('play history preserves repeated plays newest first and caps at 100 entries', () => {
+  const app = loadApp();
+  const history = [{ trackId: 'a', playedAt: 1 }];
+  const repeated = app.recordPlay(history, 'a', 2);
+  assert.deepEqual(toPlain(repeated), [{ trackId: 'a', playedAt: 2 }, { trackId: 'a', playedAt: 1 }]);
+  const full = Array.from({ length: 100 }, (_, index) => ({ trackId: String(index), playedAt: index }));
+  const capped = app.recordPlay(full, 'new', 1000);
+  assert.equal(capped.length, 100);
+  assert.deepEqual(toPlain(capped[0]), { trackId: 'new', playedAt: 1000 });
+  assert.equal(capped.some((entry) => entry.trackId === '99'), false);
+});
+
+test('queue inserts next, reorders and removes without mutating and ignores invalid indexes', () => {
+  const app = loadApp();
+  const queue = ['a', 'b', 'a'];
+  assert.deepEqual([...app.insertQueueNext(queue, 'c')], ['c', 'a', 'b', 'a']);
+  assert.deepEqual([...app.moveQueueItem(queue, 2, 0)], ['a', 'a', 'b']);
+  assert.deepEqual([...app.moveQueueItem(queue, -1, 1)], queue);
+  assert.deepEqual([...app.moveQueueItem(queue, 0, 3)], queue);
+  assert.deepEqual([...app.removeQueueItem(queue, 1)], ['a', 'a']);
+  assert.deepEqual([...app.removeQueueItem(queue, 9)], queue);
+  assert.deepEqual(queue, ['a', 'b', 'a']);
 });
