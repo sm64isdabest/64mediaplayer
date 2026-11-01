@@ -198,3 +198,26 @@ test('queue consumption returns its first track and preserves repeated upcoming 
   assert.deepEqual(toPlain(app.consumeQueue(['a', 'a', 'b'])), { trackId: 'a', queue: ['a', 'b'] });
   assert.deepEqual(toPlain(app.consumeQueue([])), { trackId: null, queue: [] });
 });
+
+test('queue playback remembers the next normal track and resumes it after queued items', () => {
+  const app = loadApp();
+  const queued = app.nextQueuedTarget(['d'], undefined, ['a', 'b', 'c', 'd'], 'b', 'off', true);
+  assert.deepEqual(toPlain(queued), { trackId: 'd', queue: [], queueResumeId: 'c', fromQueue: true, resuming: false });
+  const resumed = app.nextQueuedTarget(queued.queue, queued.queueResumeId, ['a', 'b', 'c', 'd'], 'd', 'off', true);
+  assert.deepEqual(toPlain(resumed), { trackId: 'c', queue: [], fromQueue: false, resuming: true });
+  assert.equal(resumed.queueResumeId, undefined);
+  assert.equal(app.nextQueuedTarget([], undefined, ['a', 'b'], 'b', 'off', true), null);
+});
+
+test('history records only a new confirmed playback session and allows replaying the same track', () => {
+  const app = loadApp();
+  const first = app.recordStartedSession([], 'a', 1, -1, 10);
+  assert.deepEqual(toPlain(first), { history: [{ trackId: 'a', playedAt: 10 }], lastSessionId: 1 });
+  const resume = app.recordStartedSession(first.history, 'a', 1, first.lastSessionId, 20);
+  assert.deepEqual(toPlain(resume), toPlain(first));
+  const replay = app.recordStartedSession(resume.history, 'a', 2, resume.lastSessionId, 30);
+  assert.deepEqual(toPlain(replay.history), [{ trackId: 'a', playedAt: 30 }, { trackId: 'a', playedAt: 10 }]);
+  assert.deepEqual(toPlain(app.recordStartedSession(replay.history, null, 3, replay.lastSessionId, 40)), toPlain(replay));
+  assert.equal(app.beginPlaybackSession(2, false), 2);
+  assert.equal(app.beginPlaybackSession(2, true), 3);
+});

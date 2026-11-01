@@ -40,7 +40,7 @@ Os controles usam o áudio nativo do navegador: play/pause, próxima/anterior, s
 
 Favoritos e as últimas 100 reproduções ficam em `localStorage` somente neste navegador e são associados aos IDs do catálogo; nenhum MP3 é guardado ali. O histórico pode ser limpo pela interface. A fila permite itens repetidos, é mantida apenas durante a sessão e toca antes da ordem normal. Busca e filtro de favoritos limitam a lista mostrada; a reprodução automática continua seguindo o escopo de pastas selecionado.
 
-Crossfade e EQ continuam adiados: o endpoint atual não fornece CORS para o Web Audio. Para recuperar a interface offline após as mudanças, o service worker instala o cache `64-media-player-shell-v4`; os MP3 continuam fora do cache e exigem internet.
+Crossfade e EQ continuam adiados: o endpoint atual não fornece CORS para o Web Audio. Para recuperar a interface offline após as mudanças, o service worker instala o cache `64-media-player-shell-v5`; os MP3 continuam fora do cache e exigem internet.
 
 Para executar a interface localmente, use um servidor HTTP (o service worker não funciona ao abrir o arquivo diretamente):
 

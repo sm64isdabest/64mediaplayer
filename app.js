@@ -148,6 +148,25 @@
     return { trackId, queue: remaining };
   }
 
+  function nextQueuedTarget(queue, queueResumeId, order, currentId, loopMode = 'off', automatic = false) {
+    if (queue?.length) {
+      const resumeId = queueResumeId === undefined ? adjacentTrackId(order, currentId, 'next', loopMode, automatic) : queueResumeId;
+      const next = consumeQueue(queue);
+      return { ...next, queueResumeId: resumeId, fromQueue: true, resuming: false };
+    }
+    if (queueResumeId !== undefined) return { trackId: queueResumeId, queue: [], queueResumeId: undefined, fromQueue: false, resuming: true };
+    return null;
+  }
+
+  function recordStartedSession(history, trackId, sessionId, lastSessionId, playedAt = Date.now()) {
+    if (!trackId || sessionId === lastSessionId) return { history: history || [], lastSessionId };
+    return { history: recordPlay(history, trackId, playedAt), lastSessionId: sessionId };
+  }
+
+  function beginPlaybackSession(sessionId, audioEnded) {
+    return audioEnded ? sessionId + 1 : sessionId;
+  }
+
   function configureMediaSession(session, metadata, handlers, MetadataConstructor = root.MediaMetadata) {
     if (!session) return false;
     if (MetadataConstructor) {
@@ -200,6 +219,7 @@
     let queue = [];
     let playbackSession = 0;
     let lastRecordedSession = -1;
+    let queueResumeId;
     let stateLoaded = false;
     let storage = null;
     try { storage = root.localStorage || null; } catch (_) { storage = null; }
@@ -370,6 +390,7 @@
     function setCurrent(track, autoplay = true) {
       if (!track) return;
       currentId = track.id;
+      queueResumeId = undefined;
       playbackSession++;
       if (shuffle) playOrder = buildPlayOrder(scopedTracks(), true, Math.random, currentId);
       else playOrder = buildPlayOrder(scopedTracks(), false, Math.random, currentId);
@@ -389,6 +410,10 @@
             if (!track) { updateStatus('Nenhuma faixa disponível neste escopo.'); return; }
             setCurrent(track, false);
           }
+          if (audio.ended) {
+            audio.currentTime = 0;
+            playbackSession = beginPlaybackSession(playbackSession, true);
+          }
           await audio.play();
           updateStatus('Reproduzindo');
         }
@@ -399,20 +424,32 @@
     }
 
     function moveTrack(direction, automatic = false) {
-      if (direction === 'next' && queue.length) {
-        const next = consumeQueue(queue);
+      if (direction === 'previous') queueResumeId = undefined;
+      if (direction === 'next' && queue.length && queueResumeId === undefined && loopMode === 'all' && currentId && playOrder.indexOf(currentId) === playOrder.length - 1) {
+        playOrder = buildNextCycle(scopedTracks(), currentId, shuffle);
+      }
+      if (direction === 'next' && (queue.length || queueResumeId !== undefined)) {
+        const next = nextQueuedTarget(queue, queueResumeId, playOrder, currentId, loopMode, automatic);
         queue = next.queue;
-        const queuedTrack = rows.find((track) => track.id === next.trackId);
+        queueResumeId = next.queueResumeId;
         renderQueue();
-        if (queuedTrack) {
-          currentId = queuedTrack.id;
+        if (next.resuming && !next.trackId) {
+          queueResumeId = undefined;
+          audio.pause(); updateStatus('Fim da lista.'); updatePlayer();
+          return;
+        }
+        const targetPool = next.fromQueue ? rows : scopedTracks();
+        const nextTrack = targetPool.find((track) => track.id === next.trackId);
+        if (nextTrack) {
+          currentId = nextTrack.id;
           playbackSession++;
-          audio.src = queuedTrack.url;
+          audio.src = nextTrack.url;
           audio.load();
           updatePlayer();
           togglePlayback(true);
           return;
         }
+        if (next.resuming) queueResumeId = undefined;
       }
       if (direction === 'next' && loopMode === 'all' && currentId && playOrder.indexOf(currentId) === playOrder.length - 1) {
         playOrder = buildNextCycle(scopedTracks(), currentId, shuffle);
@@ -457,6 +494,7 @@
       if (oldTrack && !scopedTracks().some((track) => track.id === currentId)) {
         audio.pause(); audio.removeAttribute('src'); audio.load(); currentId = null;
       }
+      queueResumeId = undefined;
       playOrder = buildPlayOrder(scopedTracks(), shuffle, Math.random, currentId);
       list.scrollTop = 0;
       updatePlayer();
@@ -587,15 +625,15 @@
     audio.addEventListener('timeupdate', updatePlayer);
     audio.addEventListener('durationchange', updatePlayer);
     audio.addEventListener('loadedmetadata', updatePlayer);
-    audio.addEventListener('play', () => {
-      updateStatus('Reproduzindo');
-      if (currentId && playbackSession !== lastRecordedSession) {
-        history = recordPlay(history, currentId, Date.now());
-        lastRecordedSession = playbackSession;
+    audio.addEventListener('play', () => { updateStatus('Reproduzindo'); updatePlayer(); });
+    audio.addEventListener('playing', () => {
+      const result = recordStartedSession(history, currentId, playbackSession, lastRecordedSession, Date.now());
+      if (result.lastSessionId !== lastRecordedSession) {
+        history = result.history;
+        lastRecordedSession = result.lastSessionId;
         saveStoredJson(storage, '64mp:history:v1', history);
         renderHistory();
       }
-      updatePlayer();
     });
     audio.addEventListener('pause', updatePlayer);
     audio.addEventListener('ended', () => moveTrack('next', true));
@@ -604,6 +642,6 @@
     refresh();
   }
 
-  root.PlayerApp = { loadCatalog, validateCatalog, virtualWindow, formatDuration, fisherYates, buildPlayOrder, buildNextCycle, adjacentTrackId, filterByFolders, nextFolderSelection, seekTarget, normalizeSearchText, searchTracks, toggleFavorite, recordPlay, insertQueueNext, moveQueueItem, removeQueueItem, loadStoredJson, saveStoredJson, reconcileCatalogState, consumeQueue, configureMediaSession };
+  root.PlayerApp = { loadCatalog, validateCatalog, virtualWindow, formatDuration, fisherYates, buildPlayOrder, buildNextCycle, adjacentTrackId, filterByFolders, nextFolderSelection, seekTarget, normalizeSearchText, searchTracks, toggleFavorite, recordPlay, insertQueueNext, moveQueueItem, removeQueueItem, loadStoredJson, saveStoredJson, reconcileCatalogState, consumeQueue, nextQueuedTarget, recordStartedSession, beginPlaybackSession, configureMediaSession };
   if (root.document) boot();
 })(typeof window === 'undefined' ? globalThis : window);
