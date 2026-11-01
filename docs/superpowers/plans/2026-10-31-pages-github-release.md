@@ -79,8 +79,10 @@
 - [ ] **Passo 3: Implementar a sincronização** com criação de Release/tag e upload HTTP em streaming direto de cada MP3, autenticado pelo `gh` local; manter o token apenas em memória, substituir assets alterados e retomar falhas sem copiar os 2,4 GiB para staging.
 - [ ] **Passo 4: Validar a Release inteira** contra os caminhos locais e só então escrever `music-catalog.json` em substituição atômica; o catálogo contém metadados e URLs públicas, nunca blobs ou imagens de capa embutidas.
 - [ ] **Passo 5: Testar `--dry-run` com a pasta local completa** e revisar somente a contagem, tamanho total, maior arquivo, colisões e erros; não listar nomes/títulos.
-- [ ] **Passo 6: Executar `--publish`** para publicar os 673 MP3 encontrados no preflight local, autorizado pelo usuário; validar contagem da Release e correspondência 1:1 com o catálogo.
-- [ ] **Passo 7: Commit e push** somente `music-catalog.json` e os testes/ajustes do publicador; nenhum MP3 entra no commit.
+- [ ] **Passo 6: Rodar suíte completa e `--dry-run`**; esperado: testes verdes, 673 MP3, 2,4 GiB agregados e zero erros, sem saída de nomes/tags.
+- [ ] **Passo 7: Commit e push** somente `scripts/publish-music.mjs` e `tests/publish-music.test.js`; nenhum MP3 entra no commit.
+- [ ] **Passo 8: Executar `--publish`** para publicar os 673 MP3 encontrados, autorizado pelo usuário; validar contagem, digest/tamanho e correspondência 1:1 antes de gerar o catálogo.
+- [ ] **Passo 9: Commit e push** somente `music-catalog.json`; nenhum MP3 entra no commit.
 
 ### Task 3: Trocar importação local por catálogo do Pages
 
