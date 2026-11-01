@@ -1,4 +1,4 @@
-const CACHE = '64-media-player-shell-v5';
+const CACHE = '64-media-player-shell-v6';
 const FILES = ['./', './index.html', './style.css', './manifest.json', './assets/app-icon.svg', './app.js', './music-catalog.json'];
 
 self.addEventListener('install', (event) => {

@@ -135,6 +135,9 @@ test('search matches normalized metadata and combines query with favorite filter
   assert.deepEqual([...app.searchTracks(catalog, 'coracao', false, [])].map((track) => track.id), ['a']);
   assert.deepEqual([...app.searchTracks(catalog, 'bjork', true, ['c'])].map((track) => track.id), ['c']);
   assert.deepEqual([...app.searchTracks(catalog, 'rock', false, [])].map((track) => track.id), ['b', 'c']);
+  const rockScope = app.filterByFolders(catalog, ['Rock']);
+  assert.deepEqual([...app.searchTracks(rockScope, 'valente')].map((track) => track.id), ['b']);
+  assert.deepEqual([...app.searchTracks(rockScope, 'coração')].map((track) => track.id), []);
 });
 
 test('favorite toggle adds and removes IDs without duplicates', () => {

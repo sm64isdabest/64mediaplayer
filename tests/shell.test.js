@@ -32,7 +32,7 @@ test('player exposes native streaming transport, seek, volume, loop, shuffle, an
 
 test('PWA manifest says the audio streams and updates use a new shell cache version', () => {
   assert.match(manifest.description, /streaming/i);
-  assert.match(serviceWorker, /64-media-player-shell-v5/);
+  assert.match(serviceWorker, /64-media-player-shell-v6/);
 });
 
 test('offline shell includes the public catalog and never caches MP3 assets', () => {
@@ -51,5 +51,8 @@ test('stage four shell exposes search, favorites, queue, history, and accessible
   assert.match(combined, /data-queue-id/);
   assert.match(combined, /data-play-next-id/);
   assert.match(combined, /aria-label=["'][^"']*(?:mover|remover|fila|favorito|hist.rico)/i);
+  assert.match(appSource, /playNext\.textContent = 'A seguir'/);
+  assert.match(appSource, /Buscar nas pastas selecionadas/);
+  assert.match(appSource, /Buscar em todas as pastas/);
   assert.match(appSource, /audio\.addEventListener\('playing'/);
 });

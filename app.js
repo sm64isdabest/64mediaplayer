@@ -297,6 +297,7 @@
       folderOptions.replaceChildren(fragment);
       const title = selectedFolders.size ? `${selectedFolders.size} pasta(s) selecionada(s)` : 'Todas as pastas';
       byId('folder-filter-summary').textContent = title;
+      byId('track-search').placeholder = selectedFolders.size ? 'Buscar nas pastas selecionadas…' : 'Buscar em todas as pastas…';
     }
 
     function render() {
@@ -329,8 +330,8 @@
         favorite.setAttribute('aria-label', `${isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}: ${track.title || track.name}`);
         const addQueue = doc.createElement('button'); addQueue.className = 'row-action'; addQueue.type = 'button'; addQueue.dataset.queueId = track.id;
         addQueue.textContent = '+'; addQueue.setAttribute('aria-label', `Adicionar à fila: ${track.title || track.name}`);
-        const playNext = doc.createElement('button'); playNext.className = 'row-action'; playNext.type = 'button'; playNext.dataset.playNextId = track.id;
-        playNext.textContent = '↥'; playNext.setAttribute('aria-label', `Tocar a seguir: ${track.title || track.name}`);
+        const playNext = doc.createElement('button'); playNext.className = 'row-action row-play-next'; playNext.type = 'button'; playNext.dataset.playNextId = track.id;
+        playNext.textContent = 'A seguir'; playNext.title = 'Tocar a seguir'; playNext.setAttribute('aria-label', `Tocar a seguir: ${track.title || track.name}`);
         const play = doc.createElement('button'); play.className = 'row-play'; play.type = 'button'; play.dataset.playId = track.id;
         play.textContent = track.id === currentId && !audio.paused ? 'Ⅱ' : '▶'; play.setAttribute('aria-label', `${track.id === currentId && !audio.paused ? 'Pausar' : 'Tocar'} ${track.title || track.name}`);
         row.append(cover, info, duration, favorite, addQueue, playNext, play); fragment.append(row);
