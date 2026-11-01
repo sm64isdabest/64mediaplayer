@@ -9,7 +9,7 @@ Publicar o player em GitHub Pages e tocar a biblioteca de aproximadamente 700 MP
 - Manter o site estático em GitHub Pages, sem servidor próprio ou build obrigatório.
 - Manter os MP3 da pasta local `music/` fora do histórico Git normal e do pacote publicado pelo Pages.
 - Publicar os MP3 como assets de um Release público e gerar um catálogo compacto com metadados e URL de cada faixa.
-- Tocar faixas por streaming sob demanda; não copiar a biblioteca inteira para armazenamento do navegador.
+- Preparar URLs públicas de streaming sem copiar a biblioteca inteira para armazenamento do navegador.
 - Continuar compatível com lista virtualizada de 600+ faixas e a interface acessível no Quest.
 - Preservar as etapas combinadas: primeiro validar catálogo/site no Quest; depois adicionar reprodução e controles em etapas confirmadas pelo usuário.
 - Usar credenciais somente localmente durante a publicação; nunca embutir token no site ou nos arquivos versionados.
@@ -34,7 +34,7 @@ O usuário escolheu Pages + GitHub Release, aceita que as músicas sejam públic
 - GitHub Pages continua servindo `index.html`, CSS, JavaScript, service worker, assets visuais e um `music-catalog.json` pequeno.
 - Um Release público separado contém os arquivos MP3. Um processo local de publicação percorre `music/`, valida contagem/tamanho, cria nomes de asset estáveis e únicos, envia os MP3 por meio de credenciais locais do GitHub CLI/API e grava `music-catalog.json`. O catálogo só será commitado/enviado ao Pages depois de todos os assets necessários terem sido validados. O token nunca aparece no frontend.
 - Cada entrada do catálogo contém um ID estável, nome/título, artista/álbum quando tags válidas forem lidas, pasta relativa, tamanho, duração se disponível, tipo de mídia e `browser_download_url` do asset correspondente. Capas embutidas em ID3 não serão copiadas para o catálogo nesta revisão; o app usa arte genérica até decisão posterior.
-- O player carrega o catálogo no início e solicita o MP3 somente quando uma faixa for escolhida. O service worker não armazena respostas de áudio. A interface identifica a biblioteca como online e apresenta falhas de rede sem apagar o catálogo.
+- Nesta revisão, o site carrega e lista o catálogo e confirma links válidos; controles de reprodução ficam para a etapa seguinte, depois do teste do usuário no Quest. Quando a reprodução for implementada, o navegador solicitará o MP3 sob demanda. O service worker não armazena respostas de áudio.
 - Os MP3 nunca são passados a `git add`; o `.gitignore` protege `music/` e os arquivos temporários da publicação. Commit e push do código continuam pequenos.
 - O formato de asset evita colisões de nomes repetidos em álbuns diferentes, preservando o caminho e nome originais no catálogo.
 - A publicação usa a tag estável `music-library` e nomes de asset determinísticos. É reproduzível e retomável: validar antes de enviar, comparar assets já existentes, pular uploads idênticos, produzir relatório agregado e falhar antes de publicar catálogo incompleto. Atualizar assets substitui nomes idênticos dessa Release; o catálogo versionado no Pages só muda depois do upload completo.
@@ -45,11 +45,11 @@ O usuário escolheu Pages + GitHub Release, aceita que as músicas sejam públic
 
 - O Release contém todos os MP3 esperados sem o conteúdo aparecer no histórico regular do repositório ou no pacote Pages.
 - O catálogo publicado tem exatamente uma entrada para cada asset, sem colisões, vazios ou caminhos quebrados.
-- O Pages lista a coleção usando o catálogo, mesmo que uma faixa falhe ao carregar; falhas mostram mensagem e podem ser tentadas novamente.
-- Ao selecionar uma faixa, o navegador solicita o asset correspondente e não grava o MP3 em IndexedDB nem no cache do service worker.
+- O Pages lista a coleção usando o catálogo, mesmo que um asset esteja indisponível; falhas mostram mensagem de link inválido/rede.
+- Uma verificação de amostra confirma que URLs apontam para assets MP3 publicados; o site não grava MP3 em IndexedDB nem no cache do service worker.
 - O app informa que reprodução requer conexão. A interface e o shell continuam abrindo offline, mas o usuário não é levado a esperar áudio offline.
-- O teste no Quest confirma acesso ao Pages e reprodução de uma pequena amostra antes de avançar para controles/player completos.
-- CORS para `AudioContext.createMediaElementSource()` é verificado contra um asset real. EQ/crossfade só seguem se CORS funcionar ou se uma arquitetura de entrega com CORS for aprovada.
+- O teste no Quest confirma acesso ao Pages, carregamento do catálogo com centenas de faixas e estados online/offline antes de avançar para controles/player.
+- CORS para `AudioContext.createMediaElementSource()` é verificado na etapa futura de reprodução; EQ/crossfade só seguem se CORS funcionar ou se uma arquitetura de entrega com CORS for aprovada.
 
 ## Decisões deixadas ao implementador
 
