@@ -34,6 +34,8 @@ No GitHub, abra **Settings → Pages**, escolha **Deploy from a branch**, seleci
 
 O nome das faixas, tags ID3, pastas e links dos MP3 aparecem no catálogo público. Não inclua informação privada nos nomes ou metadados. Para carregar a lista pela primeira vez é necessário internet. O service worker pode manter a interface e o catálogo em cache para consulta offline depois de uma visita conectada; os MP3 não entram no cache e exigem internet.
 
+Na verificação de um asset publicado, o servidor respondeu `206 Partial Content` com `Accept-Ranges: bytes`, mas usou `application/octet-stream` e não enviou cabeçalho CORS. O navegador Quest ainda precisa confirmar a reprodução direta antes de adicionarmos os controles. Web Audio (EQ e crossfade) requer CORS e não está confirmado para esses links.
+
 Para executar a interface localmente, use um servidor HTTP (o service worker não funciona ao abrir o arquivo diretamente):
 
 ```powershell
