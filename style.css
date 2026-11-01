@@ -46,6 +46,8 @@ h1, h2, h3, p { margin-top: 0; }
 h1 { margin-bottom: 10px; font-size: clamp(32px, 5vw, 48px); line-height: 1.08; letter-spacing: -.045em; }
 .intro { max-width: 620px; margin-bottom: 0; color: var(--muted); line-height: 1.55; font-size: 17px; }
 .import-actions { display: flex; gap: 12px; flex-wrap: wrap; flex: 0 0 auto; }
+.folder-access { margin: 17px 0 0; color: #bbd3ce; font-size: 14px; }
+.reconnect-folder { min-height: 46px; margin-top: 10px; }
 .folder-picker { display: contents; }
 .button { min-height: 54px; padding: 0 20px; display: inline-flex; justify-content: center; align-items: center; gap: 10px; border: 1px solid transparent; border-radius: 14px; font-weight: 750; text-decoration: none; cursor: pointer; transition: transform .15s ease, background .15s ease, border-color .15s ease; }
 .button:hover { transform: translateY(-1px); }

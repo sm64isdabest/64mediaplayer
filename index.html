@@ -28,11 +28,14 @@
           <div>
             <p class="eyebrow">SUA MÚSICA, NO SEU RITMO</p>
             <h1 id="page-title">Sua biblioteca</h1>
-            <p class="intro">Importe seus MP3. Eles ficam salvos neste navegador, sem enviar arquivos para um servidor.</p>
+            <p class="intro">No Quest, escolha a pasta dos MP3 para catalogá-los sem copiá-los para o armazenamento do navegador.</p>
           </div>
           <div class="import-actions" aria-label="Importar arquivos MP3">
+            <button id="choose-quest-folder" class="button button-primary" type="button" hidden>
+              <span class="button-icon" aria-hidden="true">▣</span>Escolher pasta no Quest
+            </button>
             <label class="button button-primary" for="file-input">
-              <span class="button-icon" aria-hidden="true">＋</span>Importar músicas
+              <span class="button-icon" aria-hidden="true">＋</span>Importar arquivos
             </label>
             <input id="file-input" class="visually-hidden" type="file" accept=".mp3,audio/mpeg" multiple>
             <div class="folder-picker" id="folder-picker">
@@ -52,7 +55,9 @@
             </div>
             <span class="step-chip">MP3 · arquivos locais</span>
           </div>
-          <p class="panel-copy">Escolha vários arquivos de uma vez ou uma pasta inteira. Para centenas de faixas, importe em lotes: você pode cancelar e continuar depois.</p>
+          <p class="panel-copy">A leitura direta mantém os MP3 no Quest e salva apenas referências e metadados no site. A importação por arquivos é um fallback que copia o áudio para o armazenamento do navegador e pode atingir a cota disponível.</p>
+          <p id="folder-access" class="folder-access" role="status" aria-live="polite">Verificando acesso às pastas do Quest…</p>
+          <button id="reconnect-folder" class="button button-secondary reconnect-folder" type="button" hidden>Autorizar acesso à pasta</button>
           <div class="collection-field" id="collection-field" hidden>
             <label for="collection-name">Nome desta coleção</label>
             <input id="collection-name" type="text" maxlength="80" placeholder="Ex.: Eletrônica">
@@ -76,7 +81,7 @@
           <div class="storage-icon" aria-hidden="true">▤</div>
           <div class="storage-copy">
             <h2 id="storage-title">Armazenamento neste navegador</h2>
-            <p>As músicas permanecem no dispositivo em que você as importou.</p>
+            <p>MP3 do modo pasta direta permanecem no Quest; o fallback copia arquivos para este navegador.</p>
           </div>
           <div class="storage-stats" aria-live="polite">
             <div><span>Usado</span><strong id="storage-used">Calculando…</strong></div>
