@@ -403,7 +403,7 @@
 
     async function togglePlayback(forcePlay = null) {
       try {
-        if (forcePlay === false || (forcePlay === null && !audio.paused)) { audio.pause(); updateStatus('Pausado'); }
+        if (forcePlay === false || (forcePlay === null && !audio.paused)) { audio.pause(); }
         else {
           if (!currentTrack()) {
             const first = visibleRows[0]?.id || playOrder[0];
@@ -416,7 +416,6 @@
             playbackSession = beginPlaybackSession(playbackSession, true);
           }
           await audio.play();
-          updateStatus('Reproduzindo');
         }
       } catch (_) {
         updateStatus('Não foi possível reproduzir esta faixa. Verifique a conexão e tente novamente.');
@@ -499,7 +498,6 @@
       playOrder = buildPlayOrder(scopedTracks(), shuffle, Math.random, currentId);
       list.scrollTop = 0;
       updatePlayer();
-      updateStatus(selectedFolders.size ? 'Escopo de reprodução atualizado.' : 'Escopo em todas as pastas.');
     }
 
     function onFolderChange(event) {
@@ -551,7 +549,7 @@
     byId('shuffle-toggle').addEventListener('click', () => {
       shuffle = !shuffle;
       playOrder = buildPlayOrder(scopedTracks(), shuffle, Math.random, currentId);
-      updatePlayer(); updateStatus(shuffle ? 'Aleatório ativado.' : 'Aleatório desativado.');
+      updatePlayer();
     });
     byId('loop-toggle').addEventListener('click', () => {
       loopMode = loopMode === 'off' ? 'track' : loopMode === 'track' ? 'all' : 'off';
@@ -611,7 +609,6 @@
         const trackId = queueButton.dataset.queueId || queueButton.dataset.playNextId;
         queue = queueButton.hasAttribute('data-play-next-id') ? insertQueueNext(queue, trackId) : [...queue, trackId];
         renderQueue();
-        updateStatus(queueButton.hasAttribute('data-play-next-id') ? 'Faixa adicionada para tocar a seguir.' : 'Faixa adicionada ao fim da fila.');
         return;
       }
       const button = event.target.closest('[data-play-id]');
@@ -626,7 +623,7 @@
     audio.addEventListener('timeupdate', updatePlayer);
     audio.addEventListener('durationchange', updatePlayer);
     audio.addEventListener('loadedmetadata', updatePlayer);
-    audio.addEventListener('play', () => { updateStatus('Reproduzindo'); updatePlayer(); });
+    audio.addEventListener('play', updatePlayer);
     audio.addEventListener('playing', () => {
       const result = recordStartedSession(history, currentId, playbackSession, lastRecordedSession, Date.now());
       if (result.lastSessionId !== lastRecordedSession) {
