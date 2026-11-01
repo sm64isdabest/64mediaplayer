@@ -1,5 +1,5 @@
-const CACHE = '64-media-player-shell-v1';
-const FILES = ['./', './index.html', './style.css', './manifest.json', './assets/app-icon.svg', './app.js', './db.js', './metadata.js', './vendor/jsmediatags.min.js'];
+const CACHE = '64-media-player-shell-v2';
+const FILES = ['./', './index.html', './style.css', './manifest.json', './assets/app-icon.svg', './app.js', './music-catalog.json'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -18,6 +18,7 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Audio assets are hosted on github.com and are never cached by this worker.
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
   event.respondWith((async () => {
     const cached = await caches.match(event.request);
