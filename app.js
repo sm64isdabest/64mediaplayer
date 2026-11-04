@@ -271,9 +271,9 @@
       byId('volume-control').value = String(audio.volume);
       byId('shuffle-toggle').setAttribute('aria-pressed', String(shuffle));
       byId('shuffle-toggle').innerHTML = shuffle ? '<i class="bi bi-shuffle"></i>' : '<i class="bi bi-shuffle"></i>';
-      const loopLabels = { off: '<i class="bi bi-repeat"></i>', track: '<i class="bi bi-repeat-1"></i>', all: '<i class="bi bi-repeat"></i>' };
-      byId('loop-toggle').innerHTML = loopLabels[loopMode];
-      byId('loop-toggle').setAttribute('aria-label', loopLabels[loopMode]);
+      const loopIcons = { off: 'bi-repeat', track: 'bi-repeat-1', all: 'bi-repeat' };
+      byId('loop-toggle').innerHTML = `<i class="bi ${loopIcons[loopMode]}"></i>`;
+      byId('loop-toggle').setAttribute('aria-label', `Repetir: ${{ off: 'desligado', track: 'faixa atual', all: 'todas as faixas' }[loopMode]}`);
       byId('loop-toggle').setAttribute('aria-pressed', String(loopMode !== 'off'));
       updateMediaSession();
       render();
@@ -345,13 +345,13 @@
         const artist = doc.createElement('span'); artist.className = 'drawer-track-meta'; artist.textContent = track.artist || track.folder || '';
         const info = doc.createElement('span'); info.className = 'drawer-track-info'; info.append(title, artist);
         const actions = doc.createElement('span'); actions.className = 'drawer-actions';
-        for (const [action, label, symbol, disabled] of [
-          ['up', 'Mover para cima', '↑', index === 0],
-          ['down', 'Mover para baixo', '↓', index === queue.length - 1],
-          ['remove', 'Remover da fila', '×', false],
+        for (const [action, label, icon, disabled] of [
+          ['up', 'Mover para cima', 'bi-arrow-up', index === 0],
+          ['down', 'Mover para baixo', 'bi-arrow-down', index === queue.length - 1],
+          ['remove', 'Remover da fila', 'bi-x-lg', false],
         ]) {
           const button = doc.createElement('button'); button.className = 'row-action'; button.type = 'button'; button.dataset.queueAction = action; button.dataset.queueIndex = String(index);
-          button.textContent = symbol; button.disabled = disabled; button.setAttribute('aria-label', `${label}: ${track.title || track.name}`); actions.append(button);
+          button.innerHTML = `<i class="bi ${icon}" aria-hidden="true"></i>`; button.disabled = disabled; button.setAttribute('aria-label', `${label}: ${track.title || track.name}`); actions.append(button);
         }
         item.append(info, actions); fragment.append(item);
       });
