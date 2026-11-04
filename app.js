@@ -502,8 +502,8 @@
     }
 
     async function refresh() {
-      retry.hidden = true;
-      status.textContent = 'Carregando biblioteca pública…';
+      if (retry) retry.hidden = true;
+      if (status) status.textContent = 'Carregando biblioteca pública…';
       try {
         rows = await loadCatalog('./music-catalog.json');
         if (!stateLoaded) {
@@ -518,7 +518,6 @@
           saveStoredJson(storage, '64mp:history:v1', history);
           stateLoaded = true;
         }
-        status.textContent = `${rows.length} faixas · requer internet para reproduzir`;
         empty.querySelector('p').textContent = 'O catálogo ainda não contém músicas.';
         renderFolderOptions();
         playOrder = buildPlayOrder(scopedTracks(), shuffle);
@@ -527,13 +526,13 @@
         renderHistory();
       } catch (error) {
         rows = []; render();
-        status.textContent = root.navigator?.onLine === false ? 'Você está offline. Conecte-se para carregar a biblioteca pública.' : (error.message || 'Não foi possível carregar o catálogo.');
+        if (status) status.textContent = root.navigator?.onLine === false ? 'Você está offline. Conecte-se para carregar a biblioteca pública.' : (error.message || 'Não foi possível carregar o catálogo.');
         empty.querySelector('p').textContent = 'Verifique sua conexão e tente carregar o catálogo novamente.';
-        retry.hidden = false;
+        if (retry) retry.hidden = false;
       }
     }
 
-    retry.addEventListener('click', refresh);
+    retry?.addEventListener('click', refresh);
     byId('play-toggle').addEventListener('click', () => togglePlayback());
     byId('previous-track').addEventListener('click', () => {
       if (audio.currentTime > 3) { audio.currentTime = 0; updatePlayer(); }

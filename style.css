@@ -172,23 +172,12 @@ h1 {
   border: 1px solid var(--border);
   border-radius: 22px;
 }
-.catalog-panel {
-  min-height: 82px;
-  padding: 18px 22px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-}
-.catalog-panel p {
-  margin: 0;
-  color: #c8c8c8;
-  line-height: 1.45;
-}
+
 .import-panel {
   padding: 27px 30px;
   margin-bottom: 16px;
 }
+
 .panel-heading {
   display: flex;
   align-items: center;
@@ -477,6 +466,7 @@ progress::-moz-progress-bar {
   min-height: 54px;
   min-width: 54px;
   font-size: 14px;
+  border-radius: 13px;
   white-space: nowrap;
 }
 .library-drawer {
@@ -568,11 +558,14 @@ progress::-moz-progress-bar {
   gap: 4px;
 }
 .row-action {
+  height: 100%;
+  width: 58px;
   min-width: 48px;
   min-height: 48px;
   padding: 0 8px;
   border: 1px solid #505050;
-  border-radius: 13px;
+  border-top: none;
+  border-bottom: none;
   color: var(--accent);
   background: #151515;
   font-size: 22px;
@@ -647,8 +640,7 @@ progress::-moz-progress-bar {
   background: rgba(18, 18, 18, 0.8);
 }
 .track-row {
-  height: 88px;
-  padding: 10px 12px;
+  height: fit-content;
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr) auto 48px 48px 78px 48px;
   align-items: center;
@@ -662,7 +654,6 @@ progress::-moz-progress-bar {
   display: grid;
   place-items: center;
   overflow: hidden;
-  border-radius: 12px;
   color: var(--accent);
   background: #252525;
   font-size: 25px;
@@ -699,27 +690,30 @@ progress::-moz-progress-bar {
 .track-row.is-current {
   background: #282828;
 }
+
 .row-play {
-  min-width: 48px;
+  height: 100%;
+  min-width: 116px;
   min-height: 48px;
   border: 1px solid #505050;
-  border-radius: 14px;
+  border-top: none;
+  border-bottom: none;
   color: var(--accent);
   background: #151515;
-  font-size: 18px;
+  font-size: 24px;
   cursor: pointer;
 }
+
 .player-dock {
   position: fixed;
   z-index: 5;
   right: 0;
   bottom: 0;
   left: 0;
-  padding: 12px max(20px, calc((100vw - 1160px) / 2))
-    max(14px, env(safe-area-inset-bottom));
+  padding: 0 max(20px, calc((100vw - 1160px) / 2));
   display: grid;
   grid-template-columns: minmax(190px, 1fr) auto;
-  gap: 8px 24px;
+  gap: 0 24px;
   align-items: center;
   border-top: 1px solid #505050;
   background: rgba(0, 0, 0, 0.97);
@@ -736,12 +730,11 @@ progress::-moz-progress-bar {
   gap: 12px;
 }
 .player-art {
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  border-radius: 13px;
   color: var(--accent);
   background: #252525;
   font-size: 25px;
@@ -774,47 +767,49 @@ progress::-moz-progress-bar {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
 }
+
 .player-button {
-  min-width: 52px;
-  min-height: 52px;
-  border: 1px solid #444444;
-  border-radius: 15px;
-  color: var(--text);
-  background: #1c1c1c;
-  font-size: 19px;
-  cursor: pointer;
-}
-.play-button {
   min-width: 60px;
   min-height: 60px;
+  border: none;
+  color: var(--text);
+  background: #1c1c1c;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.play-button {
   color: var(--accent-ink);
   background: var(--accent);
   border-color: transparent;
-  font-size: 23px;
+  font-size: 28px;
 }
+
 .mode-button {
-  min-height: 50px;
+  min-height: 60px;
+  min-width: 60px;
   padding: 0 13px;
-  border: 1px solid #444444;
-  border-radius: 13px;
+  border: none;
   color: #c8c8c8;
   background: #121212;
-  font-size: 13px;
+  font-size: 28px;
   cursor: pointer;
 }
+
 .mode-button[aria-pressed="true"] {
-  border-color: #777777;
   color: var(--accent);
   background: #282828;
 }
+
 .timeline-row {
   grid-column: 1 / -1;
+  border-top: 1px solid #505050;
   display: flex;
   align-items: center;
   gap: 12px;
 }
+
 .range-control {
   min-width: 44px;
   height: 34px;
@@ -872,30 +867,32 @@ progress::-moz-progress-bar {
     flex-wrap: wrap;
     padding: 18px;
   }
+  
   .storage-copy {
     padding-top: 3px;
   }
+
   .storage-stats {
     width: 100%;
     padding: 14px 0 0 64px;
     border-top: 1px solid #383838;
   }
+
   .library-section {
     margin-top: 34px;
   }
-  .library-tools {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
+
   .search-field {
     grid-column: 1 / -1;
   }
+
   .library-drawer {
     min-width: 0;
   }
+
   .player-dock {
     padding-inline: 16px;
     grid-template-columns: 1fr;
-    gap: 8px;
   }
   .player-current {
     min-height: 44px;
@@ -904,10 +901,7 @@ progress::-moz-progress-bar {
     max-width: 42%;
     text-align: right;
   }
-  .transport-row {
-    justify-content: space-between;
-    gap: 6px;
-  }
+
   .mode-button {
     flex: 1;
     padding-inline: 8px;

@@ -8,11 +8,15 @@ const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
 const serviceWorker = fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'manifest.json'), 'utf8'));
 
-test('shell describes a public online library and includes loading, retry, and track list states', () => {
-  for (const id of ['catalog-status', 'catalog-retry', 'track-count', 'track-list', 'empty-state']) {
+test('shell keeps catalog loading errors in the empty state when the retry panel is omitted', () => {
+  for (const id of ['track-count', 'track-list', 'empty-state']) {
     assert.match(html, new RegExp(`id=["']${id}["']`), `missing #${id}`);
   }
-  assert.match(html, /Biblioteca pública/);
+  assert.doesNotMatch(html, /id=["']catalog-(?:status|retry)["']/);
+  assert.match(appSource, /retry\?\.addEventListener\('click', refresh\)/);
+  assert.match(appSource, /if \(status\) status\.textContent/);
+  assert.match(appSource, /if \(retry\) retry\.hidden = false/);
+  assert.match(html, /biblioteca pública/i);
   assert.match(html, /internet/);
   assert.match(html, /rel=["']manifest["']/);
 });
