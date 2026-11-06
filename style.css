@@ -757,12 +757,6 @@ progress::-moz-progress-bar {
   color: var(--muted);
   font-size: 13px;
 }
-.player-message {
-  max-width: 180px;
-  margin: 0 0 0 auto;
-  color: #d0d0d0;
-  font-size: 12px;
-}
 .transport-row {
   display: flex;
   align-items: center;
@@ -897,11 +891,6 @@ progress::-moz-progress-bar {
   .player-current {
     min-height: 44px;
   }
-  .player-message {
-    max-width: 42%;
-    text-align: right;
-  }
-
   .mode-button {
     flex: 1;
     padding-inline: 8px;

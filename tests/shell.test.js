@@ -34,6 +34,14 @@ test('player exposes native streaming transport, seek, volume, loop, shuffle, an
   assert.doesNotMatch(html, /crossorigin/i);
 });
 
+test('player status message element and update behavior are removed', () => {
+  const styles = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
+  assert.doesNotMatch(html, /player-message/);
+  assert.doesNotMatch(styles, /player-message/);
+  assert.doesNotMatch(appSource, /player-message|updateStatus/);
+  assert.doesNotMatch(appSource, /audio\.addEventListener\('error'/);
+});
+
 test('PWA manifest says the audio streams and updates use a new shell cache version', () => {
   assert.match(manifest.description, /streaming/i);
   assert.match(serviceWorker, /64-media-player-shell-v6/);

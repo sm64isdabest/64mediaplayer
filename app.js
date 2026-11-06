@@ -224,10 +224,6 @@
     function scopedTracks() { return filterByFolders(rows, selectedFolders); }
     function visibleTracks() { return searchTracks(scopedTracks(), searchQuery, favoritesOnly, favorites); }
 
-    function updateStatus(message) {
-      byId('player-message').textContent = message || '';
-    }
-
     function updateMediaSession() {
       const track = currentTrack();
       const mediaSession = root.navigator?.mediaSession;
@@ -402,7 +398,7 @@
           if (!currentTrack()) {
             const first = visibleRows[0]?.id || playOrder[0];
             const track = visibleRows.find((item) => item.id === first);
-            if (!track) { updateStatus('Nenhuma faixa disponível neste escopo.'); return; }
+            if (!track) return;
             setCurrent(track, false);
           }
           if (audio.ended) {
@@ -411,9 +407,7 @@
           }
           await audio.play();
         }
-      } catch (_) {
-        updateStatus('Não foi possível reproduzir esta faixa. Verifique a conexão e tente novamente.');
-      }
+      } catch (_) { /* Browser playback errors are intentionally silent. */ }
       updatePlayer();
     }
 
@@ -429,7 +423,7 @@
         renderQueue();
         if (next.resuming && !next.trackId) {
           queueResumeId = undefined;
-          audio.pause(); updateStatus('Fim da lista.'); updatePlayer();
+          audio.pause(); updatePlayer();
           return;
         }
         const targetPool = next.fromQueue ? rows : scopedTracks();
@@ -450,7 +444,7 @@
       }
       const nextId = adjacentTrackId(playOrder, currentId, direction, loopMode, automatic);
       if (!nextId) {
-        if (direction === 'next') { audio.pause(); updateStatus('Fim da lista.'); updatePlayer(); }
+        if (direction === 'next') { audio.pause(); updatePlayer(); }
         return;
       }
       const nextTrack = scopedTracks().find((track) => track.id === nextId);
@@ -627,7 +621,6 @@
     });
     audio.addEventListener('pause', updatePlayer);
     audio.addEventListener('ended', () => moveTrack('next', true));
-    audio.addEventListener('error', () => updateStatus('Erro ao carregar a faixa. Verifique a conexão e tente outra música.'));
     if (root.navigator && 'serviceWorker' in root.navigator) root.navigator.serviceWorker.register('./sw.js').catch(() => {});
     refresh();
   }
